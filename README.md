@@ -101,6 +101,23 @@ python -m collectors.decisions board            # what's waiting, per project
 python -m collectors.decisions gc               # expire past-due, prune old applied
 ```
 
+## Demo
+
+The repo ships with a **synthetic demo instance** — a fictional fleet (`registry.yaml` +
+`index.db`, all made-up data) — so you can explore the whole board without wiring anything up:
+
+```bash
+python -m collectors.web --port 8787            # open http://localhost:8787
+```
+
+You get the full board: green/amber/red verdicts with trend sparklines, the per-repo
+**Suggested next** synthesis, spend & usage, config drift, and the loop library.
+
+> The Quickstart's `discover` / `collect` steps replace the demo with **your** projects.
+> The committed demo snapshot has fixed timestamps and drifts toward "overdue" over time —
+> regenerate a fresh one with `python scripts/make_demo.py` (writes `examples/demo/`), then
+> `FOREMAN_DIR=examples/demo python -m collectors.web`.
+
 ## Layout
 
 ```
