@@ -9,4 +9,7 @@ if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ] || [ -f "$gitd
 fi
 repo="$(git rev-parse --show-toplevel)"
 ( cd "$repo" && nohup bash scripts/sync.sh >/tmp/foreman-sync.log 2>&1 & ) >/dev/null 2>&1
+# remind (synchronously, so it reaches the terminal) if the public repo now lags. Guarded so it's
+# a no-op in the public clone, which doesn't ship scripts/public_sync.sh.
+[ -f "$repo/scripts/public_sync.sh" ] && ( cd "$repo" && bash scripts/public_sync.sh status --quiet 2>/dev/null ) || true
 exit 0
