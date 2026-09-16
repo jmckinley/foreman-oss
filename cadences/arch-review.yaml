@@ -1,0 +1,32 @@
+slug: arch-review
+title: "Architecture and boundaries review"
+tier: cloud
+schedule: "43 8 * * 2"
+timeout_minutes: 45
+concurrency: one-per-project
+lock_key: "arch-review:{project}"
+
+applies_to: [acmeapi]
+
+connectors: [github]
+
+prompt_ref: prompts/arch-review.md
+
+metrics:
+  - boundary_violations
+  - cyclic_deps
+  - files_over_500loc
+
+verdict:
+  # a few oversized files are tolerable; a pile of them is real structural debt -> amber
+  green: "boundary_violations == 0 and cyclic_deps == 0 and files_over_500loc < 5"
+  amber: "boundary_violations < 5"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 14
+
+writes:
+  branch: foreman/arch-review
+  open_pr: false
+  max_files_changed: 1

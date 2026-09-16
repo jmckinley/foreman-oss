@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foreman.local/schema/registry/1",
+  "title": "Foreman registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "hosts", "defaults", "projects"],
+  "properties": {
+    "version": { "const": 1 },
+    "hosts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["os", "role"],
+        "properties": {
+          "os": { "type": "string", "enum": ["darwin", "linux"] },
+          "role": { "type": "string" },
+          "tailscale": { "type": "string" }
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["marketplace", "marketplace_pin", "context_budget_tokens", "receipt_branch", "spool_dir"],
+      "properties": {
+        "marketplace": { "type": "string" },
+        "marketplace_pin": { "type": "string" },
+        "context_budget_tokens": { "type": "integer", "minimum": 0 },
+        "receipt_branch": { "type": "string" },
+        "index_dsn": { "type": "string" },
+        "spool_dir": { "type": "string" },
+        "autorun": {
+          "type": "boolean",
+          "description": "Default scheduler behaviour: true = fire runs automatically (launch), false = queue for the next session (dispatch). Overridable per project."
+        },
+        "autorun_window": { "$ref": "#/$defs/autorunWindow" }
+      }
+    },
+    "projects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "repo", "default_branch", "worktree", "tier_default", "cadences"],
+        "properties": {
+          "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "repo": { "type": "string", "pattern": "^[^/]+/[^/]+$" },
+          "default_branch": { "type": "string" },
+          "worktree": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": { "type": "string" }
+          },
+          "tier_default": { "type": "string", "enum": ["cloud", "local", "session"] },
+          "cadences": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "schedules": {
+            "type": "object",
+            "description": "Per-loop frequency override for this project. Keys are loops in this project's cadences list; values are frequency presets that override the cadence's own schedule for this project only. Requires autorun (a preset fires unattended).",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["daily", "weekdays", "weekly", "monthly"]
+            }
+          },
+          "tiers": {
+            "type": "object",
+            "description": "Per-loop tier override for this project. Keys are loops in this project's cadences list; values override the cadence's own tier for this project only -- e.g. run a shared cloud-tier cadence on this project's local scheduler without changing it for the rest of the fleet.",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["cloud", "local", "session"]
+            }
+          },
+          "marketplace_pin": { "type": "string" },
+          "large_artifacts": { "type": "boolean" },
+          "autorun": {
+            "type": "boolean",
+            "description": "Per-project scheduler behaviour: true = fire automatically, false = queue. Overrides defaults.autorun."
+          },
+          "autorun_window": { "$ref": "#/$defs/autorunWindow" },
+          "env_keys": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Secret NAMES this project needs in its env (§19). Names only; values live in the sops store."
+          },
+          "escalation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["github_issues"],
+            "properties": {
+              "github_issues": { "type": "boolean" },
+              "labels": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "autorunWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Time-of-day window automated (preset-scheduled) loops fire within (§6). start_hour + span_hours spreads loops across a band with a jittered minute; start_minute pins an exact minute instead (loops sharing the window then fire together). A project value overrides defaults.",
+      "required": ["start_hour"],
+      "properties": {
+        "start_hour": { "type": "integer", "minimum": 0, "maximum": 23 },
+        "span_hours": { "type": "integer", "minimum": 1, "maximum": 24 },
+        "start_minute": { "type": "integer", "minimum": 0, "maximum": 59 }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+slug: ops-readiness
+title: "Ops & finish-line readiness"
+tier: local
+schedule: "37 9 * * 3"               # Wed 09:37 (overridden by a preset + autorun_window if set)
+timeout_minutes: 20
+concurrency: one-per-project
+lock_key: "ops-readiness:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/ops-readiness.md
+metrics:
+  - deploy_ops_gaps
+  - pii_masking_gap
+  - loops_unrun
+  - approval_gate_unverified
+verdict:
+  # green only when everything is closed. amber when the two locally-closeable items are done and
+  # just the host-bound / live-remote ones remain (those need the operator's SSH/creds).
+  green: "deploy_ops_gaps == 0 and pii_masking_gap == 0 and loops_unrun == 0 and approval_gate_unverified == 0"
+  amber: "pii_masking_gap == 0 and loops_unrun == 0"
+  red: otherwise
+escalate_when: red
+amber_ages_to_red_after_days: 30

@@ -1,0 +1,31 @@
+slug: test-review
+title: "Test harness, e2e and test-data review"
+tier: cloud
+schedule: "29 11 * * 1"
+timeout_minutes: 45
+concurrency: one-per-project
+lock_key: "test-review:{project}"
+
+applies_to: [foreman]
+
+connectors: [github]
+
+prompt_ref: prompts/test-review.md
+
+metrics:
+  - e2e_flows_uncovered
+  - coverage_gaps
+  - flaky_or_stale_fixtures
+
+verdict:
+  green: "e2e_flows_uncovered == 0 and flaky_or_stale_fixtures == 0"
+  amber: "coverage_gaps < 10"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 14
+
+writes:
+  branch: foreman/test-review
+  open_pr: false
+  max_files_changed: 1

@@ -1,0 +1,20 @@
+slug: ui-ux-review
+title: "UI/UX review"
+tier: local
+schedule: "27 9 * * 4"               # Thu 09:27 (overridden by a preset + autorun_window if set)
+timeout_minutes: 30
+concurrency: one-per-project
+lock_key: "ui-ux-review:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/ui-ux-review.md
+metrics:
+  - high_severity_findings
+  - intuitiveness_score
+  - visual_polish_score
+verdict:
+  green: "high_severity_findings == 0 and intuitiveness_score >= 80 and visual_polish_score >= 80"
+  amber: "high_severity_findings < 3"
+  red: otherwise
+escalate_when: red
+amber_ages_to_red_after_days: 14

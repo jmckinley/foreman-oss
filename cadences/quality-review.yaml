@@ -1,0 +1,32 @@
+slug: quality-review
+title: Code quality and review debt
+tier: cloud                          # cloud | local | session
+schedule: "23 5 * * 2"               # Tue 05:23, not :00 or :30
+timeout_minutes: 45
+concurrency: one-per-project
+lock_key: "quality-review:{project}"
+
+applies_to: [acmeapi, sentrygw, paysvc, autofillapp, workloados, devresources, devcompanion, dartboard, inventoryapp, classbot, jumpstart, helpersvc, audiosvc, paysite, acmeweb, foreman]
+
+connectors: [github]                 # cloud tier only
+
+prompt_ref: prompts/quality-review.md
+
+metrics:                             # keys must match receipt.metrics exactly
+  - review_debt_prs
+  - coverage_pct
+  - complexity_hotspots
+
+verdict:
+  # a wall of complexity hotspots is quality debt even with a clean review queue -> amber
+  green: "review_debt_prs == 0 and coverage_pct >= 80 and complexity_hotspots < 5"
+  amber: "review_debt_prs < 5"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 14
+
+writes:
+  branch: foreman/quality-review
+  open_pr: false                     # reports only; no PR
+  max_files_changed: 1

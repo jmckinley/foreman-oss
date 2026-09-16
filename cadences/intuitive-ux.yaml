@@ -1,0 +1,22 @@
+slug: intuitive-ux
+title: "First-use intuitiveness review"
+tier: local
+schedule: "41 10 * * 1"              # Mon 10:41 (overridden by a preset + autorun_window if set)
+timeout_minutes: 30
+concurrency: one-per-project
+lock_key: "intuitive-ux:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/intuitive-ux.md
+metrics:
+  - task_completion_failures
+  - friction_points
+  - intuitiveness_score
+verdict:
+  # a first-time user must be able to complete every core job unaided; a pile of small
+  # frictions is death-by-a-thousand-cuts even when nothing hard-blocks -> amber
+  green: "task_completion_failures == 0 and friction_points < 3 and intuitiveness_score >= 85"
+  amber: "task_completion_failures < 2 and friction_points < 8"
+  red: otherwise
+escalate_when: red
+amber_ages_to_red_after_days: 14

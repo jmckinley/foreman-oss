@@ -1,0 +1,18 @@
+{
+  "name": "foreman",
+  "owner": {
+    "name": "John McKinley",
+    "email": "johnamckinley@gmail.com"
+  },
+  "metadata": {
+    "description": "Foreman supervisor tooling: the consolidated brief and cross-project cadence control.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "foreman-ops",
+      "source": "./foreman-ops",
+      "description": "Supervisor skills for Foreman: /brief renders the consolidated board straight from receipts."
+    }
+  ]
+}

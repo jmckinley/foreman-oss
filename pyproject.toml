@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foreman"
+version = "0.1.0"
+description = "Supervisor for multiple concurrent Claude Code projects — schedules cadences, collects receipts, resolves effective config and drift."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dependencies = ["pyyaml", "jsonschema", "httpx"]
+
+[project.scripts]
+foreman = "collectors.cli:main"
+
+[tool.setuptools]
+# The schema/, sql/, cadences/, prompts/ data dirs live at the repo root and are referenced
+# as ROOT/<dir> at runtime, so an editable install (`pip install -e .` / `pipx install -e .`)
+# works today. A relocatable wheel would need those dirs moved under the package (or loaded
+# via importlib.resources); tracked as the remaining step for non-editable distribution.
+packages = ["collectors"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Vercel's Python runtime auto-detects api/index.py (a read-only WSGI view of the board) and
+# its `app` callable — no tool.vercel.entrypoint needed (that setting wants module:object
+# format, not a file path). Foreman is a local supervisor; this only surfaces what is
+# committed (registry + index.db), with every action control hidden.

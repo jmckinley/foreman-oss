@@ -1,0 +1,30 @@
+slug: harness-refresh
+title: Claude Code harness drift
+tier: local                          # cloud | local | session
+schedule: "13 4 * * 6"               # Sat 04:13, not :00 or :30
+timeout_minutes: 20
+concurrency: one-per-project
+lock_key: "harness-refresh:{project}"
+
+applies_to: [sentrygw]
+
+allowed_hosts: [mini, vps]           # local tier only; rejected on cloud
+
+prompt_ref: prompts/harness-refresh.md
+
+metrics:                             # keys must match receipt.metrics exactly
+  - plugins_outdated
+  - always_on_tokens
+  - skills_unused
+
+verdict:
+  green: "plugins_outdated == 0 and always_on_tokens < 2400"
+  amber: "plugins_outdated < 3"
+  red: otherwise
+
+amber_ages_to_red_after_days: 30
+
+writes:
+  branch: foreman/harness-refresh
+  open_pr: false
+  max_files_changed: 1

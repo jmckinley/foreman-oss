@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Foreman post-commit hook — keep local + cloud updated when changes are made.
+# After each commit: push (cloud auto-deploys) + restart the local dashboard, via scripts/sync.sh.
+# Backgrounded so the commit returns instantly; skipped mid-rebase/merge to avoid noise.
+# Install with scripts/install-hooks.sh (git hooks aren't tracked, so this must be installed).
+gitdir="$(git rev-parse --git-dir 2>/dev/null)" || exit 0
+if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ] || [ -f "$gitdir/MERGE_HEAD" ]; then
+  exit 0
+fi
+repo="$(git rev-parse --show-toplevel)"
+( cd "$repo" && nohup bash scripts/sync.sh >/tmp/foreman-sync.log 2>&1 & ) >/dev/null 2>&1
+exit 0

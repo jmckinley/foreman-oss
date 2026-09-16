@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foreman.local/schema/receipt/1",
+  "title": "Foreman run receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_id", "cadence", "project", "host", "tier",
+    "started", "ended", "status", "verdict", "cc_version", "metrics", "next_action"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$", "description": "ULID" },
+    "cadence": { "type": "string" },
+    "project": { "type": "string" },
+    "host": { "type": "string", "enum": ["mini", "mbp", "vps", "cloud"] },
+    "tier": { "type": "string", "enum": ["cloud", "local", "session"] },
+    "started": { "type": "string", "format": "date-time" },
+    "ended": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["ok", "failed", "timeout", "stopped", "skipped", "locked"] },
+    "verdict": { "type": "string", "enum": ["green", "amber", "red"] },
+    "lock": { "type": "string", "enum": ["held", "unverified"] },
+    "cc_version": { "type": "string" },
+    "model": { "type": "string" },
+    "cost_usd": { "type": "number", "minimum": 0 },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "in": { "type": "integer", "minimum": 0 },
+        "out": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Keys must exactly match the cadence metrics list. A missing key is status=failed.",
+      "additionalProperties": { "type": ["number", "string", "boolean"] }
+    },
+    "deltas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "name", "direction"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["metric", "state", "config"] },
+          "name": { "type": "string" },
+          "from": { "type": ["number", "string", "boolean", "null"] },
+          "to": { "type": ["number", "string", "boolean", "null"] },
+          "direction": { "type": "string", "enum": ["better", "worse", "flat"] }
+        }
+      }
+    },
+    "escalations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "summary", "evidence"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["amber", "red"] },
+          "summary": { "type": "string", "maxLength": 140 },
+          "evidence": { "type": "string", "maxLength": 500 },
+          "github_issue": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "ref"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["pr", "issue", "commit", "file", "run"] },
+          "ref": { "type": "string" }
+        }
+      }
+    },
+    "next_action": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "One imperative sentence. A run that cannot write one is not green."
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Outcome of the independent verifier pass on a red verdict (M8.2).",
+      "required": ["reproduced"],
+      "properties": {
+        "reproduced": { "type": "boolean" },
+        "verifier": { "type": "string" }
+      }
+    },
+    "notes": { "type": "string", "maxLength": 1000 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "verdict": { "const": "green" } }, "required": ["verdict"] },
+      "then": { "properties": { "escalations": { "maxItems": 0 } } }
+    },
+    {
+      "if": { "properties": { "tier": { "const": "cloud" } }, "required": ["tier"] },
+      "then": { "properties": { "host": { "const": "cloud" } } }
+    }
+  ]
+}

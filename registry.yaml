@@ -1,0 +1,221 @@
+version: 1
+
+hosts:
+  mini:
+    os: linux
+    role: record
+    tailscale: mini.tailnet.example
+  mbp:
+    os: darwin
+    role: interactive
+  vps:
+    os: linux
+    role: worker
+    tailscale: vps.tailnet.example
+
+defaults:
+  marketplace: github:acme-demo/foreman
+  marketplace_pin: "0.4.2"
+  context_budget_tokens: 2400        # always-on plugin cost ceiling per session
+  receipt_branch: state
+  index_dsn: sqlite:///srv/foreman/index.db
+  spool_dir: ~/foreman/spool
+  autorun_window:                    # time of day preset-scheduled loops fire (§6)
+    start_hour: 7                    # 7 AM
+    start_minute: 30                 # :30  -> pinned 07:30
+    span_hours: 1
+
+projects:
+  - slug: acmeapi
+    tiers:
+      docs-sync: local
+    repo: acme-demo/acmeapi
+    default_branch: main
+    worktree:
+      mini: /srv/proj/acmeapi
+      mbp: /srv/acme-demo/acmeapi
+    tier_default: cloud
+    cadences: [docs-sync, quality-review, beta-readiness, arch-review]
+    marketplace_pin: "0.4.2"
+    env_keys: [ANTHROPIC_API_KEY]     # names only; values live in the sops store (§19)
+    escalation:
+      github_issues: true
+      labels: [foreman, automated]
+
+  - slug: sentrygw
+    tiers:
+      docs-sync: local
+    repo: acme-demo/sentrygw
+    default_branch: main
+    worktree:
+      mini: /srv/proj/sentrygw
+      mbp: /srv/acme-demo/sentrygw-site
+      vps: /opt/sentrygw
+    tier_default: cloud
+    cadences: [docs-sync, quality-review, harness-refresh]
+    large_artifacts: true            # exempt from the repo-size amber
+    escalation:
+      github_issues: true
+      labels: [foreman, automated]
+
+  - slug: paysvc
+    env_keys: [SECRET_KEY, SLACK_APP_TOKEN, SLACK_BOT_TOKEN]
+    repo: acme-demo/paysvc
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/paysvc
+    tier_default: local
+    cadences: [docs-sync, quality-review]
+    escalation:
+      github_issues: false           # escalations stay in the brief only
+
+  - slug: autofillapp
+    env_keys: [CLAUDE_API_KEY, RESEND_API_KEY]
+    repo: acme-demo/autofillapp
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/autofillapp
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: workloados
+    env_keys: [ANTHROPIC_API_KEY, ARTIFICIAL_ANALYSIS_API_KEY, DASHSCOPE_API_KEY, DEEPSEEK_API_KEY, ELEVENLABS_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, MOONSHOT_API_KEY, OPENAI_API_KEY, XAI_API_KEY, ZHIPUAI_API_KEY]
+    repo: acme-demo/workloados
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/workloados
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: devresources
+    repo: acme-demo/devresources
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/devresources-v1.1
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: devcompanion
+    repo: acme-demo/DevCompanion
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/DevCompanion
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: dartboard
+    env_keys: [GEMINI_API_KEY, SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_ANON_KEY]
+    repo: acme-demo/Dartrack
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/dartrak
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: foreman
+    schedules:
+      self-check: daily
+    tiers:                        # run these shared/fleet cadences on foreman's LOCAL scheduler
+      security-review: local      # (they default to cloud tier for every other project)
+      test-review: local
+      quality-review: local
+      perf-review: local
+    autorun: true
+    repo: acme-demo/foreman
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/foreman
+    tier_default: local
+    cadences: [self-check, soc2-readiness, ui-ux-review, intuitive-ux, security-review, test-review, quality-review, perf-review, handover-refresh, ops-readiness]
+    escalation:
+      github_issues: false
+
+  - slug: inventoryapp
+    repo: acme-demo/InventoryApp
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/inventoryapp
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: classbot
+    repo: acme-demo/classbot
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/newclassbot
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: jumpstart
+    repo: acme-demo/jumpstart
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/jumpstart
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: helpersvc
+    repo: acme-demo/helpersvc
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/helpersvc
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: audiosvc
+    repo: acme-demo/audiosvc
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/audiosvc
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: paysite
+    repo: acme-demo/paysite
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/paysite
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: acmeweb
+    repo: acme-demo/acmeweb
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/acmeweb
+    tier_default: local
+    cadences: [docs-sync, quality-review, security-review]
+    escalation:
+      github_issues: false
+
+  - slug: filingsvc
+    repo: kyliemckinleydemo/filingsvc
+    default_branch: main
+    worktree:
+      mbp: /srv/acme-demo/filingsvc
+    tier_default: local
+    cadences: [docs-sync]
+    escalation:
+      github_issues: false

@@ -1,0 +1,19 @@
+slug: self-check
+title: Foreman self-supervision (tests, validate, working tree)
+tier: local
+schedule: "19 9 * * *"               # daily 09:19, avoids :00/:30
+timeout_minutes: 10
+concurrency: one-per-project
+lock_key: "self-check:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/self-check.md
+metrics:
+  - tests_failed
+  - validate_ok
+  - uncommitted_files
+verdict:
+  green: "tests_failed == 0 and validate_ok == 1"
+  amber: "tests_failed < 3"
+  red: otherwise
+amber_ages_to_red_after_days: 7

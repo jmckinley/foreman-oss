@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/srv/acme-demo/foreman/hooks/session_end.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/srv/acme-demo/foreman/hooks/stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

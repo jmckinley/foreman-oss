@@ -1,0 +1,32 @@
+slug: security-review
+title: "Security review"
+tier: cloud
+schedule: "31 7 * * 4"
+timeout_minutes: 45
+concurrency: one-per-project
+lock_key: "security-review:{project}"
+
+applies_to: [autofillapp, workloados, devresources, devcompanion, dartboard, inventoryapp, classbot, jumpstart, helpersvc, audiosvc, paysite, acmeweb, foreman]
+
+connectors: [github]
+
+prompt_ref: prompts/security-review.md
+
+metrics:
+  - high_severity_findings
+  - secrets_exposed
+  - deps_with_known_cves
+
+verdict:
+  # a dependency with a known CVE is a real exposure — it must not score green
+  green: "high_severity_findings == 0 and secrets_exposed == 0 and deps_with_known_cves == 0"
+  amber: "high_severity_findings < 3"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 14
+
+writes:
+  branch: foreman/security-review
+  open_pr: false
+  max_files_changed: 1

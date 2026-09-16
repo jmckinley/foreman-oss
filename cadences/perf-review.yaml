@@ -1,0 +1,32 @@
+slug: perf-review
+title: "Performance and scalability review"
+tier: cloud
+schedule: "19 9 * * 3"
+timeout_minutes: 45
+concurrency: one-per-project
+lock_key: "perf-review:{project}"
+
+applies_to: [foreman]
+
+connectors: [github]
+
+prompt_ref: prompts/perf-review.md
+
+metrics:
+  - hot_paths_unbounded
+  - p95_regressions
+  - load_headroom_pct
+
+verdict:
+  # a latency regression since last run drops you out of green even if headroom looks fine
+  green: "hot_paths_unbounded == 0 and load_headroom_pct >= 40 and p95_regressions == 0"
+  amber: "hot_paths_unbounded < 3"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 14
+
+writes:
+  branch: foreman/perf-review
+  open_pr: false
+  max_files_changed: 1

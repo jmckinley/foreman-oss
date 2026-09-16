@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+# Local spool for cadence partials (drained into receipts, never committed here)
+spool/
+*.partial.json
+# The state branch is checked out as a worktree here (git worktree add state state);
+# its contents live on branch 'state', not main.
+/state/
+# Secrets (§19): only sops-encrypted *.sops.yaml may be committed. Plaintext and the
+# per-project injected env files never are.
+.env
+secrets/*
+!secrets/*.sops.yaml
+!secrets/.gitkeep
+!secrets/expiry.yaml
+.vercel
+.env*.local
+
+.playwright-mcp/
+.coverage
+.DS_Store
+
+# Generated demo instance (scripts/make_demo.py)
+examples/demo/

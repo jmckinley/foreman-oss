@@ -1,0 +1,10 @@
+{
+  "name": "foreman-ops",
+  "version": "0.1.0",
+  "description": "Supervisor skills for Foreman. Ships /brief and /explain-config; /dispatch, /promote and /close follow in later milestones.",
+  "author": {
+    "name": "John McKinley",
+    "email": "johnamckinley@gmail.com"
+  },
+  "homepage": "https://github.com/acme-demo/foreman"
+}

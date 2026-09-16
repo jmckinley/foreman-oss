@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foreman.local/schema/cadence/1",
+  "title": "Foreman cadence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "tier", "schedule", "applies_to", "prompt_ref", "metrics", "verdict"],
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "title": { "type": "string" },
+    "tier": { "type": "string", "enum": ["cloud", "local", "session"] },
+    "schedule": {
+      "type": "string",
+      "description": "Five-field cron, local time. Semantics validated in collectors/validate.py."
+    },
+    "timeout_minutes": { "type": "integer", "minimum": 1 },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-run stop conditions. A launch breaching any of these is terminated and gets a status:stopped receipt (distinct from timeout and the global quota guard).",
+      "minProperties": 1,
+      "properties": {
+        "max_tokens": { "type": "integer", "minimum": 1 },
+        "max_cost_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "wall_clock_minutes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Independent verifier pass: re-check a metric-driven red with a cheaper probe before trusting it. A red the verifier cannot reproduce is downgraded to amber with a note.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "model": { "type": "string" }
+      }
+    },
+    "concurrency": { "type": "string" },
+    "lock_key": { "type": "string" },
+    "applies_to": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "connectors": { "type": "array", "items": { "type": "string" } },
+    "allowed_hosts": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["mini", "mbp", "vps"] }
+    },
+    "prompt_ref": { "type": "string" },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["green", "amber", "red"],
+      "properties": {
+        "green": { "type": "string" },
+        "amber": { "type": "string" },
+        "red": { "type": "string" }
+      }
+    },
+    "escalate_when": { "type": "string" },
+    "amber_ages_to_red_after_days": { "type": "integer", "minimum": 1 },
+    "writes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "branch": { "type": "string" },
+        "open_pr": { "type": "boolean" },
+        "max_files_changed": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

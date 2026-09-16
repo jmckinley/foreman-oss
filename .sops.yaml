@@ -1,0 +1,6 @@
+# sops creation rules (SPEC §19). Values in secrets/*.sops.yaml are age-encrypted to every
+# host that must decrypt. Add mini/vps public keys here (comma-separated) once provisioned.
+creation_rules:
+  - path_regex: secrets/.*\.sops\.yaml$
+    age: >-
+      age1j40qt5ewvvwvlx7yjmzneungh3qfmzahheuzuf6395pygz7m3acqa2jqhk

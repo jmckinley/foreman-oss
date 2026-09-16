@@ -1,0 +1,21 @@
+slug: soc2-readiness
+title: "SOC 2 readiness"
+tier: local
+schedule: "33 9 * * 3"               # Wed 09:33, avoids :00/:30
+timeout_minutes: 20
+concurrency: one-per-project
+lock_key: "soc2-readiness:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/soc2-readiness.md
+metrics:
+  - committed_secrets
+  - tracked_env_files
+  - unresolved_security_alerts
+verdict:
+  # SOC 2 CC6/CC7: no secrets or dotenv files under version control, no open security alerts.
+  green: "committed_secrets == 0 and tracked_env_files == 0 and unresolved_security_alerts == 0"
+  amber: "committed_secrets == 0 and tracked_env_files == 0"
+  red: otherwise
+escalate_when: red
+amber_ages_to_red_after_days: 14

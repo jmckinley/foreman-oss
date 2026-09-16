@@ -1,0 +1,31 @@
+slug: beta-readiness
+title: Beta readiness blockers
+tier: cloud                          # cloud | local | session
+schedule: "41 6 * * 3"               # Wed 06:41, not :00 or :30
+timeout_minutes: 40
+concurrency: one-per-project
+lock_key: "beta-readiness:{project}"
+
+applies_to: [acmeapi]
+
+connectors: [github]                 # cloud tier only
+
+prompt_ref: prompts/beta-readiness.md
+
+metrics:                             # keys must match receipt.metrics exactly
+  - open_blockers
+  - harness_pass_rate
+  - days_to_target
+
+verdict:
+  green: "open_blockers == 0 and harness_pass_rate >= 95"
+  amber: "open_blockers < 3"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 10
+
+writes:
+  branch: foreman/beta-readiness
+  open_pr: false
+  max_files_changed: 1

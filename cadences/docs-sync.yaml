@@ -1,0 +1,33 @@
+slug: docs-sync
+title: Documentation and user guide drift
+tier: cloud                          # cloud | local | session
+schedule: "17 3 * * 1,4"             # not :00 or :30, avoids one-shot jitter
+timeout_minutes: 40
+concurrency: one-per-project
+lock_key: "docs-sync:{project}"
+
+applies_to: [acmeapi, sentrygw, paysvc]
+
+connectors: [github]                 # cloud tier only
+# allowed_hosts: [mini, vps]         # local tier only; rejected on cloud
+
+prompt_ref: prompts/docs-sync.md
+
+metrics:                             # keys must match receipt.metrics exactly
+  - undocumented_public_symbols
+  - guide_sections_stale_days_max
+  - changelog_commit_delta
+
+verdict:
+  # a changelog lagging many user-visible commits is doc drift too, even if the guide is fresh
+  green: "undocumented_public_symbols == 0 and guide_sections_stale_days_max < 14 and changelog_commit_delta < 20"
+  amber: "guide_sections_stale_days_max < 45"
+  red: otherwise
+
+escalate_when: red
+amber_ages_to_red_after_days: 21
+
+writes:
+  branch: foreman/docs-sync
+  open_pr: true
+  max_files_changed: 25              # refuse and report rather than open a 400-file PR

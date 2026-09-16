@@ -1,0 +1,12 @@
+# The hosted board is read-only and renders from registry.yaml + index.db only.
+# Keep receipts, the decision queue, secrets, and local spool off Vercel entirely.
+state/
+secrets/
+spool/
+tests/
+scripts/
+docs/
+hooks/
+__pycache__/
+*.pyc
+foreman-test/

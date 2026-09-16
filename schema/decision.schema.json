@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foreman.local/schema/decision/1",
+  "title": "Foreman operator decision",
+  "description": "A durable operator decision queued for a project. The forward channel: receipts flow app->Foreman, decisions flow Foreman->app. Applied supervisor-side during drain, or app-side at the next SessionStart for that project.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "decision_id", "project", "created", "actor",
+    "kind", "payload", "requires_session", "status"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "decision_id": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$", "description": "ULID" },
+    "project": { "type": "string" },
+    "created": { "type": "string", "format": "date-time" },
+    "actor": { "type": "string", "description": "Who made the decision (operator id or host)." },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "dispatch_cadence",
+        "close_escalation",
+        "set_pin",
+        "pause_cadence",
+        "resume_cadence",
+        "answer_question",
+        "apply_setting",
+        "note",
+        "approve_push"
+      ]
+    },
+    "payload": { "type": "object", "description": "Kind-specific; required keys enforced in collectors/decisions.py." },
+    "requires_session": {
+      "type": "boolean",
+      "description": "true: drained app-side at the next SessionStart for the project. false: applied supervisor-side during drain."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "applied", "superseded", "expired", "failed"]
+    },
+    "expires": { "type": "string", "format": "date-time" },
+    "supersedes": { "type": ["string", "null"], "description": "decision_id this replaces" },
+    "applied": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "host"],
+      "properties": {
+        "at": { "type": "string", "format": "date-time" },
+        "host": { "type": "string" },
+        "session_uuid": { "type": ["string", "null"] },
+        "result": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "notes": { "type": "string", "maxLength": 1000 }
+  },
+  "allOf": [
+    {
+      "comment": "A terminal status must carry an applied block recording how it resolved.",
+      "if": {
+        "properties": { "status": { "enum": ["applied", "failed"] } },
+        "required": ["status"]
+      },
+      "then": { "required": ["applied"] }
+    }
+  ]
+}

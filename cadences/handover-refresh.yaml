@@ -1,0 +1,22 @@
+slug: handover-refresh
+title: "Handover doc & memory refresh"
+tier: local
+schedule: "23 8 * * 5"               # Fri 08:23 (avoids :00/:30; overridden by a preset + window)
+timeout_minutes: 20
+concurrency: one-per-project
+lock_key: "handover-refresh:{project}"
+applies_to: [foreman]
+allowed_hosts: [mbp]
+prompt_ref: prompts/handover-refresh.md
+metrics:
+  - handover_sections_stale
+  - memory_entries_stale
+  - days_since_handover_update
+verdict:
+  green: "handover_sections_stale == 0 and memory_entries_stale == 0"
+  amber: "handover_sections_stale < 3"
+  red: otherwise
+amber_ages_to_red_after_days: 14
+writes:
+  open_pr: false
+  max_files_changed: 6
