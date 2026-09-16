@@ -92,6 +92,11 @@ python -m collectors.collect --state-dir ./state --index ./index.db --host mbp  
 python -m collectors.web --port 8787           # open http://localhost:8787
 ```
 
+> **Works with private repos.** The GitHub collector shells out to the [`gh`](https://cli.github.com)
+> CLI, so it reads whatever your login can see — private repos included. Run `gh auth login` (or set
+> `GH_TOKEN`/`GITHUB_TOKEN`) first. Without auth it still runs, degrading GitHub fields to defaults
+> rather than erroring; git-side signals (branches, dirty tree, blobs) need no auth at all.
+
 Operator decisions (SPEC §18):
 
 ```bash
