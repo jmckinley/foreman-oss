@@ -86,11 +86,15 @@ def test_recent_activity_none_conn():
 def test_activity_feed_is_capped_and_scrollable(foreman_dir, state_dir, index_path):
     # a busy week must not push the rest of the board down: the feed sits in a height-capped,
     # scrollable container (.actfeed) rather than rendering every row inline
+    # timestamps must be within the feed's 7-day window, so anchor them to *now* rather than a
+    # fixed date that ages out of the window as the calendar advances
+    base = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)
     conn = db.open_index(index_path)
     for i in range(25):
+        ts = (base + dt.timedelta(minutes=i)).strftime("%Y-%m-%dT%H:%M:%SZ")
         conn.execute("INSERT INTO run(run_id,cadence,project,host,tier,started,ended,status,verdict)"
                      " VALUES(?,?,?,?,?,?,?,?,?)", (f"r{i}", "docs-sync", "foreman", "mbp", "local",
-                     "2026-09-10T08:00:00Z", f"2026-09-10T08:{i:02d}:00Z", "ok", "green"))
+                     ts, ts, "ok", "green"))
     conn.commit()
     data = web._gather(foreman_dir, state_dir, index_path)
     try:

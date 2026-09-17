@@ -346,6 +346,91 @@ def _spec_for(foreman_dir: Path, name: str) -> dict | None:
     return library_specs(foreman_dir).get(name) or CATALOG.get(name)
 
 
+def _prompt_scaffold(name: str, metrics: list[str], body: str) -> str:
+    """Wrap a user's plain-language review instructions with the reporting contract, so a
+    hand-authored loop is immediately runnable."""
+    body = (body or "").strip() or ("Describe what this loop reviews: what to inspect, what "
+                                    "counts as a problem, and how to compute each metric below.")
+    keys = ", ".join(f"`{m}`" for m in metrics)
+    metric_json = ", ".join(f'"{m}": <number>' for m in metrics)
+    return (f"# {name}\n\n{body}\n\n"
+            f"## Report — do this last\n\n"
+            f"Write `$FOREMAN_SPOOL/$FOREMAN_RUN_ID.partial.json` with exactly:\n\n"
+            f"- **metrics** — the numbers you measured; keys must match the loop's metrics "
+            f"({keys}): `{{ {metric_json} }}`\n"
+            f"- **next_action** — one imperative sentence: the single highest-value next step.\n"
+            f"- **deltas** — `[]`, or one `{{\"kind\":\"metric\",\"name\":...,"
+            f"\"direction\":\"better|worse|flat\"}}` per changed metric vs the previous receipt.\n\n"
+            f"The SessionEnd hook derives the verdict from this partial; writing no partial is a "
+            f"failed (red) run.\n")
+
+
+_REPORT_MARKER = "## Report — do this last"
+
+
+def _prompt_body(raw: str) -> str:
+    """Reverse ``_prompt_scaffold``: recover the editable instructions from a prompt file, so the
+    edit form shows what the author wrote — not the machine-generated reporting contract, which
+    ``author`` regenerates from the current metrics on save (avoids a doubled contract)."""
+    if not raw:
+        return ""
+    body = raw.split(_REPORT_MARKER, 1)[0]      # drop the reporting contract (regenerated on save)
+    lines = body.splitlines()
+    if lines and lines[0].startswith("# "):     # drop the scaffold's "# <name>" title line
+        lines = lines[1:]
+    return "\n".join(lines).strip()
+
+
+def author(foreman_dir, name: str, *, title: str = "", metrics=None, green: str = "",
+           amber: str = "", prompt: str = "") -> dict:
+    """Create or update a loop entirely from the dashboard — no external editor. Writes
+    ``loops/<name>.yaml`` (spec: metrics + verdict + title) and ``prompts/<name>.md`` (the review
+    instructions). Editing a built-in this way lands a library override (like Customize + edit)."""
+    foreman_dir = Path(foreman_dir)
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name or ""):
+        raise ValueError(f"loop name {name!r} must be lowercase kebab-case, e.g. my-review")
+    metrics = [m.strip() for m in (metrics or []) if m.strip()]
+    if not metrics:
+        raise ValueError("give at least one metric — the number(s) your review reports")
+    green = (green or "").strip() or f"{metrics[0]} == 0"
+    amber = (amber or "").strip() or f"{metrics[0]} < 5"
+    prev = library_specs(foreman_dir).get(name) or CATALOG.get(name) or {}
+    spec = {"title": (title or "").strip() or prev.get("title") or f"Custom loop: {name}",
+            "schedule": prev.get("schedule", "33 9 * * 3"),
+            "metrics": metrics, "green": green, "amber": amber,
+            "measure": prev.get("measure") or [f"**`{m}`** — what this measures." for m in metrics],
+            "example_action": prev.get("example_action", "the single highest-value next step")}
+    lib = foreman_dir / LIBRARY_SUBDIR
+    lib.mkdir(exist_ok=True)
+    (lib / f"{name}.yaml").write_text(yaml.safe_dump(spec, sort_keys=False))
+    (foreman_dir / "prompts").mkdir(exist_ok=True)
+    (foreman_dir / "prompts" / f"{name}.md").write_text(_prompt_scaffold(name, metrics, prompt))
+    return {"loop": name, "spec": str(lib / f"{name}.yaml"),
+            "prompt": str(foreman_dir / "prompts" / f"{name}.md")}
+
+
+def editable(foreman_dir, name: str) -> dict:
+    """The current authorable state of a loop (title / metrics / verdict / prompt), for pre-filling
+    the edit form. Reads the committed cadence's verdict when there is one."""
+    foreman_dir = Path(foreman_dir)
+    spec = dict(_spec_for(foreman_dir, name) or {})
+    green, amber = spec.get("green", ""), spec.get("amber", "")
+    cad = foreman_dir / "cadences" / f"{name}.yaml"
+    if cad.is_file():
+        try:
+            c = yaml.safe_load(cad.read_text()) or {}
+            v = c.get("verdict") or {}
+            green, amber = v.get("green", green), v.get("amber", amber)
+            spec.setdefault("title", c.get("title", ""))
+            spec.setdefault("metrics", c.get("metrics", []))
+        except (OSError, yaml.YAMLError):
+            pass
+    prompt_path = foreman_dir / "prompts" / f"{name}.md"
+    return {"name": name, "title": spec.get("title", ""), "metrics": spec.get("metrics", []),
+            "green": green, "amber": amber,
+            "prompt": _prompt_body(prompt_path.read_text()) if prompt_path.is_file() else ""}
+
+
 def customize(foreman_dir, name: str) -> dict:
     """Make a built-in loop editable: copy its catalog spec into loops/<name>.yaml, where it
     overrides the built-in for future materialisation. Idempotent — if the library file already

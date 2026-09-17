@@ -85,6 +85,50 @@ def test_loop_new_and_customize(foreman_dir, state_dir, monkeypatch):
     assert opened and opened[-1].endswith("arch-review.yaml")
 
 
+def test_loop_author_creates_loop_and_prompt(foreman_dir, state_dir):
+    # in-dashboard author: no external editor, writes both the spec and the runnable prompt
+    _apply("loop-author", {"name": "link-check", "title": "Link check",
+                           "metrics": "broken_links, checked", "green": "broken_links == 0",
+                           "amber": "broken_links < 5",
+                           "prompt": "Crawl the docs and follow every link."},
+           foreman_dir, state_dir)
+    spec = yaml.safe_load((foreman_dir / "loops" / "link-check.yaml").read_text())
+    assert spec["metrics"] == ["broken_links", "checked"]
+    assert spec["green"] == "broken_links == 0" and spec["amber"] == "broken_links < 5"
+    md = (foreman_dir / "prompts" / "link-check.md").read_text()
+    assert "Crawl the docs and follow every link." in md
+    assert "## Report — do this last" in md          # runnable reporting contract appended
+    assert "`broken_links`" in md                     # metric names wired into the contract
+
+
+def test_loop_author_edit_roundtrip_no_doubled_contract(foreman_dir, state_dir):
+    from collectors import loops
+    _apply("loop-author", {"name": "link-check", "title": "Link check",
+                           "metrics": "broken_links", "green": "", "amber": "",
+                           "prompt": "First pass instructions."}, foreman_dir, state_dir)
+    # editing pre-fills from the loop's current state, showing the body only (not the contract)
+    d = loops.editable(foreman_dir, "link-check")
+    assert d["prompt"].strip() == "First pass instructions."
+    assert "## Report" not in d["prompt"]
+    # save an edit; the contract must appear exactly once, not be doubled
+    _apply("loop-author", {"name": "link-check", "title": "Link check v2",
+                           "metrics": "broken_links, warnings", "green": "", "amber": "",
+                           "prompt": d["prompt"] + "\n\nSecond pass added."}, foreman_dir, state_dir)
+    md = (foreman_dir / "prompts" / "link-check.md").read_text()
+    assert md.count("## Report — do this last") == 1
+    assert "Second pass added." in md
+    spec = yaml.safe_load((foreman_dir / "loops" / "link-check.yaml").read_text())
+    assert spec["title"] == "Link check v2"
+    assert spec["metrics"] == ["broken_links", "warnings"]
+
+
+def test_loop_author_rejects_bad_name(foreman_dir, state_dir):
+    with pytest.raises(ValueError):
+        _apply("loop-author", {"name": "Bad Name", "metrics": "a"}, foreman_dir, state_dir)
+    with pytest.raises(ValueError):
+        _apply("loop-author", {"name": "ok-name", "metrics": ""}, foreman_dir, state_dir)
+
+
 def test_dispatch_enqueues_decision(foreman_dir, state_dir, index_path):
     from collectors import db
     db.open_index(index_path).close()

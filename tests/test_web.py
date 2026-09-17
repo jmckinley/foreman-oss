@@ -45,6 +45,26 @@ def test_read_only_render_hides_actions(foreman_dir, state_dir, make_receipt, in
     assert "Loops" in out and "acmeapi" in out           # the status still renders
 
 
+def test_loop_editor_prefilled_when_edit_param(foreman_dir, state_dir, index_path):
+    from collectors import loops
+    loops.author(foreman_dir, "link-check", title="Link check", metrics=["broken_links"],
+                 green="broken_links == 0", amber="broken_links < 5",
+                 prompt="Crawl the docs and follow every link.")
+    data = web._gather(foreman_dir, state_dir, index_path)
+    try:
+        blank = web.render(data, refresh=0)
+        edit = web.render(data, refresh=0, edit="link-check")
+    finally:
+        if data["conn"]:
+            data["conn"].close()
+    # the blank board shows the create form; the ?edit= board shows the pre-filled editor
+    assert 'action="/loop-author"' in blank and "Create a new loop" in blank
+    assert "Edit loop" in edit and "editing <b>link-check</b>" in edit
+    assert 'value="Link check"' in edit and 'value="broken_links"' in edit
+    assert "Crawl the docs and follow every link." in edit
+    assert "## Report" not in edit                    # contract hidden; only the authored body shows
+
+
 def test_dashboard_renders_core_sections(foreman_dir, state_dir, make_receipt, index_path):
     from collectors import db
     make_receipt("acmeapi", "docs-sync", "2026-09-06T08:00:00Z", "green")

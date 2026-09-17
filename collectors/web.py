@@ -213,6 +213,21 @@ button:hover{background:rgba(88,166,255,.18)}
 .dim{color:var(--dim)}.mono{font-family:var(--mono);font-size:12.5px}
 .acts{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .acts form{margin:0}
+.editlink{color:var(--blue);text-decoration:none;font-size:13px}
+.editlink:hover{text-decoration:underline}
+.loop-editor{display:flex;flex-direction:column;gap:9px;margin:0}
+.loop-editor label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--dim)}
+.loop-editor input,.loop-editor textarea{background:var(--panel);color:var(--fg);
+border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+.loop-editor textarea{font-family:var(--mono);font-size:12.5px;line-height:1.45;resize:vertical}
+.le-help{font-size:12px;color:var(--dim);line-height:1.45;background:var(--panel);
+border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+.le-help code{font-family:var(--mono);font-size:11.5px;color:var(--blue)}
+.le-verdict{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.le-prompt{gap:4px}
+.le-editing{font-size:13px;color:var(--fg)}
+.le-cancel{color:var(--dim);text-decoration:none;margin-left:8px;font-size:12px}
+.le-cancel:hover{color:var(--blue);text-decoration:underline}
 .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;margin:1px 4px 1px 0;
 background:rgba(154,167,181,.12);color:var(--dim)}
 .chip.red{background:rgba(248,81,73,.16);color:var(--red)}
@@ -383,22 +398,43 @@ def _register_form(cwd: str) -> str:
             f'</form>')
 
 
-def _loop_edit_form(path: Path) -> str:
-    """Open a loop's cadence/library file in the operator's editor (same localhost-only,
-    values-stay-here mechanism as the .env edit button)."""
-    return (f'<form method="post" action="/loop-edit" style="display:inline">'
-            f'<input type="hidden" name="path" value="{html.escape(str(path))}">'
-            f'<button title="open {html.escape(str(path))} in your editor">✎ edit</button></form>')
-
-
-def _loop_customize_form(loop: str) -> str:
-    """Copy a built-in loop's spec into the editable library and open it (a built-in has no file
-    to edit until it's either enabled or customised)."""
-    return (f'<form method="post" action="/loop-customize" style="display:inline" '
-            f'{_confirm(f"Copy {loop} into your editable library (loops/) and open it? Your copy overrides the built-in default.")}>'
-            f'<input type="hidden" name="loop" value="{html.escape(loop)}">'
-            f'<button title="copy this built-in into loops/ and edit — your copy overrides the '
-            f'default">✎ customize</button></form>')
+def _loop_editor(data=None) -> str:
+    """The in-dashboard loop author/editor — create a new loop or edit an existing one entirely in
+    the browser (no host editor). ``data`` (from loops.editable) pre-fills the edit case."""
+    new = data is None
+    d = data or {"name": "", "title": "", "metrics": [], "green": "", "amber": "", "prompt": ""}
+    name = html.escape(d["name"])
+    if new:
+        name_field = ('<label>name<input name="name" placeholder="my-review" size="18" required '
+                      'pattern="[a-z0-9][a-z0-9-]*" title="lowercase kebab-case, e.g. my-review"></label>')
+    else:
+        name_field = (f'<input type="hidden" name="name" value="{name}">'
+                      f'<div class="le-editing">editing <b>{name}</b> '
+                      f'<a class="le-cancel" href="/#sec-library">cancel</a></div>')
+    return (
+        f'<form method="post" action="/loop-author" class="loop-editor" id="loop-editor">'
+        f'{name_field}'
+        f'<label>title<input name="title" value="{html.escape(d["title"])}" '
+        'placeholder="What it reviews" size="34"></label>'
+        f'<label>metrics<input name="metrics" value="{html.escape(", ".join(d["metrics"]))}" '
+        'placeholder="high_findings, coverage_pct" size="34" required></label>'
+        '<div class="le-help">ⓘ <b>Metrics</b> are the numbers your review reports — one or more, '
+        'comma-separated, short snake_case. The verdict is computed from them, and your prompt must '
+        'output each one. <i>Examples:</i> <code>high_findings</code>, <code>coverage_pct</code>, '
+        '<code>broken_links</code>.</div>'
+        f'<div class="le-verdict"><label>green when<input name="green" value="{html.escape(d["green"])}" '
+        'placeholder="high_findings == 0" size="22"></label>'
+        f'<label>amber when<input name="amber" value="{html.escape(d["amber"])}" '
+        'placeholder="high_findings &lt; 5" size="22"></label>'
+        '<span class="le-help" style="margin:0">use the metric names above; red = anything else</span></div>'
+        '<label class="le-prompt">instructions — what this loop should do'
+        f'<textarea name="prompt" rows="8" placeholder="Describe the review a Claude session runs: '
+        'what to inspect, what counts as a problem, and how to compute each metric. This becomes the '
+        f'loop&#39;s prompt.">{html.escape(d["prompt"])}</textarea></label>'
+        f'<div class="acts" style="margin:0"><button>{"Create loop" if new else "Save changes"}</button>'
+        '<span class="na">Writes <code>loops/&lt;name&gt;.yaml</code> (metrics + verdict) and '
+        '<code>prompts/&lt;name&gt;.md</code> (these instructions) — all editable here later, no '
+        'external editor.</span></div></form>')
 
 
 def _env_edit_form(path: Path) -> str:
@@ -934,6 +970,7 @@ _ERR_LABEL = {
     "register-scan": "Scan found nothing new to register under that folder.",
     "loop-enable": "Enable failed — the loop was not enabled for that project.",
     "loop-new": "Add loop failed — check the name is kebab-case and not already taken.",
+    "loop-author": "Couldn't save the loop — check the name is lowercase kebab-case and you gave at least one metric.",
     "loop-edit": "Couldn't open that loop file — not an editable cadence/loop on this host.",
 }
 
@@ -1031,7 +1068,8 @@ def _recent_section(roster: list, now, timelines: dict | None = None, *,
 
 
 def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: bool = True,
-           error: str | None = None, read_only: bool = False, search: str | None = None) -> str:
+           error: str | None = None, read_only: bool = False, search: str | None = None,
+           edit: str | None = None) -> str:
     reg, projects, analysis = data["registry"], data["projects"], data["analysis"]
     conn, now = data["conn"], data["now"]
     foreman_dir = Path(data["foreman_dir"])
@@ -1392,35 +1430,31 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
                            f'<input type="hidden" name="loop" value="{html.escape(loop)}">'
                            f'<select name="project">{opts}</select> '
                            f'<button>enable</button></form>')
-        cad_file = foreman_dir / "cadences" / f"{loop}.yaml"
-        lib_file = foreman_dir / "loops" / f"{loop}.yaml"
-        target = cad_file if cad_file.is_file() else (lib_file if lib_file.is_file() else None)
-        if target:
-            edit_cell = _loop_edit_form(target)
-        elif loop in loops.CATALOG and "metrics" in loops.CATALOG[loop]:
-            edit_cell = _loop_customize_form(loop)   # built-in with a spec but no file yet
-        else:
-            edit_cell = '<span class="na">enable first</span>'
+        # in-dashboard editor (no host editor): ?edit=<loop> re-renders with the editor pre-filled
+        edit_cell = (f'<a class="editlink" href="/?edit={html.escape(loop)}#loop-editor" '
+                     f'title="edit this loop in the dashboard">✎ edit</a>')
         facts = _loop_facts(cad_meta.get(loop))
         out.append(f'<tr><td><b>{html.escape(loop)}</b> '
                    f'<span class="dim">{html.escape(e.get("title", ""))}</span>{facts}</td>'
                    f'<td>{html.escape(e["kind"])}</td><td>{enabled}</td>'
                    f'<td>{enable_cell}</td><td>{edit_cell}</td></tr>')
     out.append('</table>')
+    # In-dashboard author/editor. ?edit=<loop> pre-fills it from the loop's current definition;
+    # otherwise it's a blank create form. Either way the loop is written entirely here — no host
+    # editor — which is what the old "scaffold then open $EDITOR" flow was missing.
+    _edit_data = None
+    if edit:
+        try:
+            _edit_data = loops.editable(foreman_dir, edit)
+        except Exception:
+            _edit_data = None
     out.append(
-        '<form method="post" action="/loop-new" class="card">'
-        '<div style="font-weight:600;font-size:14px;margin-bottom:9px">➕ Create a new loop</div>'
-        '<div class="acts" style="margin:0;gap:12px">'
-        '<label class="dim">name <input name="name" placeholder="my-review" size="16" required '
-        'pattern="[a-z0-9][a-z0-9-]*" title="lowercase kebab-case, e.g. my-review"></label>'
-        '<label class="dim">title <input name="title" placeholder="What it reviews" size="22"></label>'
-        '<label class="dim">metrics <input name="metrics" placeholder="finding_count, notes" size="24"></label>'
-        '<button>Add loop</button></div>'
-        '<div class="na" style="margin-top:9px">Scaffolds an editable template at '
-        '<code>loops/&lt;name&gt;.yaml</code> with a starter verdict — then <b>✎ edit</b> its '
-        'metrics / verdict / prompt and <b>enable</b> it for a project. To tweak a <b>built-in</b> '
-        'loop instead, use its <b>✎ customize</b> button in the table above (it copies the default '
-        'into your library, where your edits take precedence).</div></form></section>')
+        '<div class="card">'
+        f'<div style="font-weight:600;font-size:14px;margin-bottom:9px">'
+        f'{"✎ Edit loop" if _edit_data else "➕ Create a new loop"}</div>'
+        + _loop_editor(_edit_data) + '</div></section>')
+    if edit:
+        open_ids.add("library")   # jump the operator straight to the pre-filled editor
 
     # DISCOVERED (scan session roots directly so it works before C1 has run) + register tools.
     # Sits here in the "manage what Foreman watches" zone (right after the loop catalogue), not
@@ -1942,10 +1976,12 @@ def make_handler(foreman_dir, state_dir, index_path, refresh=30, gh_login=None, 
             qs = urllib.parse.parse_qs(parsed.query)
             error = qs.get("err", [None])[0]
             search = qs.get("pq", [None])[0]
+            edit = qs.get("edit", [None])[0]
             data = _gather(foreman_dir, state_dir, index_path)
             try:
                 self._html(render(data, refresh=refresh, gh_login=gh_login,
-                                  fingerprints=fingerprints, error=error, search=search))
+                                  fingerprints=fingerprints, error=error, search=search,
+                                  edit=edit))
             finally:
                 if data["conn"]:
                     data["conn"].close()
@@ -2047,6 +2083,15 @@ def apply_action(action, form, *, foreman_dir, state_dir, index_path) -> None:
             reg = yaml.safe_load((Path(foreman_dir) / "registry.yaml").read_text())
             if scheduler.autorun_for(reg, project):
                 scheduler.set_loop_schedule(Path(foreman_dir), project, loop, preset)
+    elif action == "loop-author":
+        # In-dashboard create/edit: writes loops/<name>.yaml (metrics + verdict) and
+        # prompts/<name>.md (the instructions) — no external editor.
+        loops.author(
+            Path(foreman_dir), form.get("name", [""])[0].strip(),
+            title=form.get("title", [""])[0],
+            metrics=[m.strip() for m in form.get("metrics", [""])[0].split(",") if m.strip()],
+            green=form.get("green", [""])[0], amber=form.get("amber", [""])[0],
+            prompt=form.get("prompt", [""])[0])
     elif action == "loop-new":
         name = form.get("name", [""])[0].strip()
         metrics = [m.strip() for m in form.get("metrics", [""])[0].split(",")

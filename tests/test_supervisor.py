@@ -573,10 +573,10 @@ def test_dashboard_loops_catalog_section(foreman_dir, tmp_path):
     from collectors import web
     h = web.render(web._gather(foreman_dir, tmp_path / "state", None), refresh=0)
     assert "Loop library" in h                           # the catalogue / manage section exists
-    assert "/loop-enable" in h and "/loop-new" in h      # enable + add controls
-    # a built-in with a cadence file offers an edit button; the New-loop form is present
-    assert "/loop-edit" in h and "✎ edit" in h
-    assert 'name="metrics"' in h                          # add-loop form fields
+    assert "/loop-enable" in h and "/loop-author" in h   # enable + in-dashboard author controls
+    # each loop offers an in-dashboard edit link; the create/author form is present
+    assert "?edit=" in h and "✎ edit" in h
+    assert 'name="metrics"' in h and 'name="prompt"' in h  # author form fields (metrics + instructions)
 
 
 def test_board_folds_unregistered_projects(state_dir):
