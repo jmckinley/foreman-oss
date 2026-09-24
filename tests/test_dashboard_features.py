@@ -219,11 +219,16 @@ def test_recently_worked_on_search_and_week(foreman_dir, state_dir, index_path, 
     from collectors import prompts
     monkeypatch.setenv("FOREMAN_PROMPT_STORE", str(tmp_path / "p.db"))
     store = tmp_path / "p.db"
+    # timestamps must land inside the "this week" window, so anchor to *now* rather than a fixed
+    # date that ages out (the tally + roster only render for recent prompts)
+    now = dt.datetime.now(dt.timezone.utc)
+    def _ts(h):
+        return (now - dt.timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M:%SZ")
     conn = prompts.connect(store)
     conn.executemany("INSERT INTO prompt(project, ts, text, session) VALUES(?,?,?,?)", [
-        ("foreman", "2026-09-13T09:00:00Z", "fix the scheduler bug", "s"),
-        ("paysvc", "2026-09-12T09:00:00Z", "scheduler review", "s"),
-        ("foreman", "2026-09-13T10:00:00Z", "add a dark mode toggle", "s")])
+        ("foreman", _ts(2), "fix the scheduler bug", "s"),
+        ("paysvc", _ts(3), "scheduler review", "s"),
+        ("foreman", _ts(1), "add a dark mode toggle", "s")])
     conn.commit(); conn.close()
     db.open_index(index_path).close()
     data = web._gather(foreman_dir, state_dir, index_path)

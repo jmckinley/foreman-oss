@@ -1,0 +1,62 @@
+# Foreman cloud routine — fires `tier: cloud` cadences unattended (SPEC §3: fresh clone, no
+# local filesystem, hourly). The local launchd scheduler skips cloud tier; this is its other
+# half. Each run: check out foreman, work out which cloud cadences are due (from committed
+# receipts), clone each project fresh, run it headless with `claude -p`, then commit the receipts
+# back. The index lock is unreachable here, so cloud receipts are marked lock:unverified — the
+# `concurrency` group below is what actually prevents two routines racing.
+#
+# Required repo secret: ANTHROPIC_API_KEY (headless `claude -p` auth).
+# Optional repo secret: FOREMAN_CLONE_TOKEN — a PAT with `repo` scope to clone PRIVATE project
+#   repos. Without it, only public project repos clone (private ones produce a red receipt).
+name: cloud-routine
+
+on:
+  schedule:
+    - cron: "17 * * * *"      # hourly; :17 dodges the top-of-hour one-shot jitter (SPEC §7)
+  workflow_dispatch: {}        # manual "run now"
+
+concurrency:
+  group: foreman-cloud-routine
+  cancel-in-progress: false    # let an in-flight routine finish; never run two at once
+
+permissions:
+  contents: write              # commit + push receipts back to the repo
+
+jobs:
+  routine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet pyyaml jsonschema httpx
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Fire due cloud cadences
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FOREMAN_CLONE_TOKEN: ${{ secrets.FOREMAN_CLONE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          FOREMAN_DIR: ${{ github.workspace }}
+          FOREMAN_STATE_DIR: ${{ github.workspace }}/state
+          FOREMAN_SPOOL: ${{ runner.temp }}/spool
+        run: python -m collectors.cloud tick
+
+      - name: Commit receipts
+        run: |
+          git config user.name  "foreman-cloud"
+          git config user.email "foreman-cloud@users.noreply.github.com"
+          if [ -n "$(git status --porcelain state/receipts)" ]; then
+            git add state/receipts
+            git commit -m "Cloud routine: receipts $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          else
+            echo "no new receipts this pass"
+          fi
