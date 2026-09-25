@@ -191,11 +191,16 @@ def _build_receipt_with_env(env: dict) -> Path | None:
 
 
 def tick(foreman_dir: Path, state_dir: Path, spool: Path, *, now: dt.datetime | None = None,
-         clone_token: str | None = None) -> dict:
-    """Fire every due cloud cadence once. Idempotent per occurrence via committed receipts."""
+         clone_token: str | None = None, only: str | None = None) -> dict:
+    """Fire every due cloud cadence once. Idempotent per occurrence via committed receipts.
+    ``only`` (a substring) scopes the run to matching project or cadence names — for a controlled
+    manual first run (`workflow_dispatch`) before the hourly cron fires the whole backlog."""
     now = now or dt.datetime.now()
+    due = due_cloud(Path(foreman_dir), Path(state_dir), now=now)
+    if only:
+        due = [d for d in due if only in d["project"] or only in d["cadence"]]
     fired = []
-    for d in due_cloud(Path(foreman_dir), Path(state_dir), now=now):
+    for d in due:
         try:
             fired.append(run_one(foreman_dir, state_dir, spool, project=d["project"],
                                   cadence=d["cadence"], repo=d.get("repo"), now=now,
@@ -224,7 +229,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(due_cloud(foreman_dir, state_dir, now=dt.datetime.now()), indent=2))
         return 0
     if args.cmd == "tick":
-        out = tick(foreman_dir, state_dir, spool, clone_token=token)
+        only = (os.environ.get("FOREMAN_ONLY") or "").strip() or None
+        out = tick(foreman_dir, state_dir, spool, clone_token=token, only=only)
         print(json.dumps(out))
         return 0
     return 1

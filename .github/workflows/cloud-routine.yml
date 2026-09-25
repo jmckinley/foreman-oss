@@ -13,7 +13,12 @@ name: cloud-routine
 on:
   schedule:
     - cron: "17 * * * *"      # hourly; :17 dodges the top-of-hour one-shot jitter (SPEC §7)
-  workflow_dispatch: {}        # manual "run now"
+  workflow_dispatch:           # manual "run now"
+    inputs:
+      only:
+        description: "Scope to project/cadence substring (blank = all due). Use for a cheap first run."
+        required: false
+        default: ""
 
 concurrency:
   group: foreman-cloud-routine
@@ -47,6 +52,7 @@ jobs:
           FOREMAN_DIR: ${{ github.workspace }}
           FOREMAN_STATE_DIR: ${{ github.workspace }}/state
           FOREMAN_SPOOL: ${{ runner.temp }}/spool
+          FOREMAN_ONLY: ${{ inputs.only }}
         run: python -m collectors.cloud tick
 
       - name: Commit receipts

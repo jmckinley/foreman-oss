@@ -81,6 +81,14 @@ def test_tick_fires_then_is_idempotent(foreman_dir, state_dir, spool_dir, monkey
     assert second["fired"] == []
 
 
+def test_tick_only_scopes_to_matching_cadence(foreman_dir, state_dir, spool_dir, monkeypatch):
+    monkeypatch.setattr(cloud, "_clone_repo", lambda *a, **k: True)
+    monkeypatch.setattr(cloud, "_run_claude", _fake_claude_writing(GREEN_METRICS))
+    out = cloud.tick(foreman_dir, state_dir, spool_dir, now=NOW, only="quality-review")
+    # only quality-review cadences fired; nothing else (e.g. arch-review) slipped through
+    assert out["fired"] and all(f["cadence"] == "quality-review" for f in out["fired"])
+
+
 def test_receipts_validate_against_schema(foreman_dir, state_dir, spool_dir, monkeypatch):
     import jsonschema
     schema = json.loads((foreman_dir / "schema" / "receipt.schema.json").read_text())
