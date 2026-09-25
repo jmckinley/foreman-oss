@@ -20,8 +20,11 @@ Compute exactly these four metrics (keys must match the cadence `metrics` list):
      committed, and look for any marker/receipt that the OTLP receiver is installed on `mini`
      (`telemetry install` output, a launchd/systemd unit reference). No evidence → a gap.
   2. **`config/telemetry.env` pushed to hosts** — file present and referenced by the deploy path.
-  3. **Cloud routine wired** (M1 task 5) — a launchd/cron/script entry that fires the cloud-tier
-     cadences. Absent → a gap.
+  3. **Cloud routine wired** (M1 task 5) — a scheduled entry that fires the cloud-tier cadences.
+     Shipped as a GitHub Actions workflow: check `.github/workflows/cloud-routine.yml` exists and
+     that `collectors/cloud.py` is present (its `due_cloud`/`tick`). Present → **done, not a gap**.
+     (Activating it still needs the `ANTHROPIC_API_KEY` repo secret, but the routine itself is
+     wired.) Absent → a gap.
   4. **`sops` + `age` provisioned** — the `sops` and `age` binaries are on PATH and `secrets/`
      holds at least one `*.sops.yaml` with a usable age key. Missing → a gap.
   5. **Real `FOREMAN_QUOTA_CMD`** — set to an actual command, not unset/placeholder.
