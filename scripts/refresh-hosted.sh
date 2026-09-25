@@ -14,6 +14,9 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FM="$(pwd)"
 HOST="${FOREMAN_HOST:-mbp}"
 
+# Operator-wired runtime env (FOREMAN_QUOTA_CMD etc.) so collect's quota fetch fires. No secrets.
+set -a; [ -f config/foreman.env ] && . config/foreman.env; set +a
+
 echo "collecting (git + github) ..."
 python3 -m collectors.collect --state-dir ./state --index ./index.db --host "$HOST" --foreman-dir .
 

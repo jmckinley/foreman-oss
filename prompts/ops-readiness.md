@@ -27,7 +27,10 @@ Compute exactly these four metrics (keys must match the cadence `metrics` list):
      wired.) Absent → a gap.
   4. **`sops` + `age` provisioned** — the `sops` and `age` binaries are on PATH and `secrets/`
      holds at least one `*.sops.yaml` with a usable age key. Missing → a gap.
-  5. **Real `FOREMAN_QUOTA_CMD`** — set to an actual command, not unset/placeholder.
+  5. **Real `FOREMAN_QUOTA_CMD`** — wired to an actual command, not unset/placeholder. Check
+     `config/foreman.env` sets `FOREMAN_QUOTA_CMD` to a real command (e.g. `collectors.quota_probe`)
+     and that the module exists. Present → **done, not a gap** (reporting headroom still needs
+     `FOREMAN_PLAN_TOKEN_LIMIT` set, but the command is wired). Unset/placeholder → a gap.
 - **`pii_masking_gap`** (integer, 0 or 1): `1` if `python -c "import presidio_analyzer"` fails
   (prompt-history PII masking is secrets-only until Presidio is installed), else `0`.
 - **`loops_unrun`** (integer): how many loops enabled for `foreman` have **never produced a

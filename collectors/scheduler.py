@@ -606,7 +606,11 @@ def launchd_plist(*, foreman_dir, state_dir, index_path, spool, host, mode, inte
                   python=None) -> str:
     py = python or sys.executable
     repo = str(Path(__file__).resolve().parent.parent)
-    inner = (f"FOREMAN_DIR={foreman_dir} FOREMAN_STATE_DIR={state_dir} "
+    # Source config/foreman.env first (exported) so the tick and any loop it launches inherit the
+    # operator-wired vars (e.g. FOREMAN_QUOTA_CMD / FOREMAN_PLAN_TOKEN_LIMIT). Missing file is fine.
+    env_file = f"{foreman_dir}/config/foreman.env"
+    inner = (f"set -a; [ -f {env_file} ] && . {env_file}; set +a; "
+             f"FOREMAN_DIR={foreman_dir} FOREMAN_STATE_DIR={state_dir} "
              f"FOREMAN_INDEX={index_path} FOREMAN_SPOOL={spool} PYTHONPATH={repo} "
              f"{py} -m collectors.scheduler --host {host} tick --mode {mode}")
     log = f"{os.path.expanduser(spool)}/scheduler.log"
