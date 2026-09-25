@@ -199,6 +199,10 @@ details.repo-acc table th{background:var(--bg)}
 .amber{background:rgba(227,179,65,.16);color:var(--amber)}
 .red{background:rgba(248,81,73,.16);color:var(--red)}
 .stale{background:rgba(154,167,181,.14);color:var(--dim)}
+/* never-run: a dashed outline, not a solid fill, to read as "no verdict yet" (awaiting a first
+   run) rather than the solid grey of a stale (was-running-then-missed) loop. */
+.pill.never{background:transparent;color:var(--dim);border:1px dashed var(--line);font-weight:500}
+.dot.never{background:transparent;border:1px dashed var(--dim)}
 .muted{color:var(--faint)}
 .dash{color:var(--faint)}
 .legend{color:var(--dim);font-size:12px}
@@ -760,6 +764,19 @@ def _pill(verdict_or_label: str) -> str:
     return f'<span class="pill {cls}">{html.escape(label)}</span>'
 
 
+def _verdict_pill(a: dict) -> str:
+    """The verdict pill for one loop's analysis. A loop that has never produced a receipt is not
+    "stale" (which reads as *was running, then stopped*) — it simply hasn't run yet. Internally the
+    state stays ``stale`` (so scheduler/brief logic is unchanged), but the dashboard says "never
+    run" so the verdict, the "never run" summary count, and the row's "run it" story all agree.
+    This was the top-ranked intuitive-ux friction point: one state wearing three contradictory
+    labels at once."""
+    if a.get("latest") is None and a.get("effective") == "stale":
+        return ('<span class="pill never" title="this loop has never produced a receipt — '
+                'run it once to get a first verdict">never run</span>')
+    return _pill(a["label"])
+
+
 def _gather(foreman_dir: Path, state_dir: Path, index_path: str | None):
     registry = yaml.safe_load((foreman_dir / "registry.yaml").read_text())
     cadences = brief._cadence_meta(foreman_dir)
@@ -983,7 +1000,8 @@ def _legend_strip() -> str:
         '<span class="key"><b>Colours:</b>'
         '<span><span class="dot green"></span> healthy</span>'
         '<span><span class="dot amber"></span> needs attention soon</span>'
-        '<span><span class="dot red"></span> act now</span></span>')
+        '<span><span class="dot red"></span> act now</span>'
+        '<span><span class="dot never"></span> not yet run</span></span>')
     terms = [
         ("Loop", "a recurring AI review Foreman runs for a project (docs, security, UX…)."),
         ("Verdict", "the result of each run — green, amber, or red."),
@@ -1185,7 +1203,7 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
                 acts.append(_close_form(esc["id"], proj, cad, esc.get("issue")))
         na_html = f'<div class="dim">→ {html.escape(na)}</div>' if na else ""
         return (f'<div class="card"><b>{html.escape(proj)} / {html.escape(cad)}</b> &nbsp; '
-                f'{_pill(a["label"])}<div>{html.escape(what)}</div>{na_html}'
+                f'{_verdict_pill(a)}<div>{html.escape(what)}</div>{na_html}'
                 f'<div class="acts">{" &nbsp; ".join(acts)}</div></div>')
 
     secsum["needs"] = (f'<span><span class="n">{len(todo)}</span> to act</span>' if todo
@@ -1352,7 +1370,7 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
             nextf = _next_fire_label(eff_cron, now_local) if auto else '<span class="muted">manual</span>'
             dtier = (cad_meta.get(lp) or {}).get("tier")
             out.append(f'<tr><td><b>{html.escape(lp)}</b></td><td>{when}</td>'
-                       f'<td>{_pill(a["label"])}{_sparkline(vhist.get((slug, lp), []))}</td>'
+                       f'<td>{_verdict_pill(a)}{_sparkline(vhist.get((slug, lp), []))}</td>'
                        f'<td>{_schedule_form(slug, lp, current, ar, default_cron)}</td>'
                        f'<td>{nextf}</td>'
                        f'<td>{_tier_form(slug, lp, proj_tiers.get(slug, {}).get(lp), dtier)}</td>'
@@ -1898,7 +1916,8 @@ and never traverse the dashboard — edit <b>▸ .env</b> opens the file on this
 <p><span class="pill green">green</span> all good ·
 <span class="pill amber">amber</span> accumulating, ages to red ·
 <span class="pill red">red</span> needs a decision (opens a GitHub issue) ·
-<span class="pill stale">stale</span> the scheduler missed it.</p>
+<span class="pill stale">stale</span> the scheduler missed it ·
+<span class="pill never">never run</span> enabled but not run yet — launch it for a first verdict.</p>
 
 <h2>Standard loops</h2>
 <p class="dim">docs-sync, quality-review, beta-readiness, harness-refresh (built in) plus

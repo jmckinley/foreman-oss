@@ -97,6 +97,10 @@ def test_dashboard_renders_core_sections(foreman_dir, state_dir, make_receipt, i
     loops_panel = out.split(">Loops<")[1].split(">Loop library<")[0]
     assert 'data-acc="loops"' in loops_panel and 'data-repo="acmeapi"' in loops_panel
     assert "quality-review" in loops_panel             # never-run loop shown with its verdict
+    # a loop that has never produced a receipt reads "never run", not the misleading "stale"
+    # (was-running-then-stopped) — the top intuitive-ux friction fix
+    assert 'class="pill never"' in loops_panel and ">never run</span>" in loops_panel
+    assert "not yet run" in out                        # and the state is explained in the legend key
 
 
 def test_recent_activity_and_section(foreman_dir, state_dir, index_path):
