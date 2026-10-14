@@ -1,0 +1,24 @@
+{
+  "cadence": "beta-readiness",
+  "cc_version": "unknown",
+  "ended": "2026-10-14T06:41:23Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "beta-readiness run failed on acmeapi"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why beta-readiness produced no verdict on acmeapi.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "acmeapi",
+  "run_id": "01M4WJ9TKCP85RZAXS8GWVP2M2",
+  "schema_version": 1,
+  "started": "2026-10-14T06:41:22Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
