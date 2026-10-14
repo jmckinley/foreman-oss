@@ -593,6 +593,44 @@ def _dispatch_launchable(reg: dict, project: str, host: str) -> bool:
     return bool(wt and Path(os.path.expanduser(wt)).is_dir())
 
 
+def _insights_result(data) -> dict:
+    """Run the receipt-history analysis for the current instance. Cheap: reads receipts only."""
+    from collectors import insights
+    return insights.fleet_insights(Path(data["state_dir"]), Path(data["foreman_dir"]),
+                                   now=data["now"])
+
+
+def _insights_section(result: dict) -> tuple[str, str, bool]:
+    """Returns (section html, peek summary, default-open?). Open when anything is regressing."""
+    from collectors import insights
+    ins_color = {"R": _C_NEEDS, "A": _C_MANUAL, "info": _C_COST}
+    pairs = result["pairs"]
+    hl = insights.headlines(result)
+    worst = next((p["severity"] for p in pairs), None)      # pairs are severity-sorted
+    out = [f'<section data-sec="insights">'
+           f'{_h2(f"Trends &amp; insights {_badge(len(pairs))}", "what the receipt history says — regressions, degrading trends, flapping and projections (not just the latest verdict)", _C_REPO)}']
+    if not pairs:
+        out.append('<div class="card na">Not enough history yet — trends need ≥2 runs per loop. '
+                   'They fill in as cadences accumulate receipts.</div>')
+        out.append('</section>')
+        return "".join(out), '<span class="muted">building history</span>', False
+    if hl:
+        out.append('<div class="card"><b>Across the fleet</b><ul style="margin:.4em 0 0;padding-left:1.2em">'
+                   + "".join(f'<li>{html.escape(h)}</li>' for h in hl) + '</ul></div>')
+    for p in pairs:
+        color = ins_color.get(p["severity"], _C_OPS)
+        sigs = " · ".join(html.escape(s["headline"]) for s in p["signals"])
+        detail = html.escape(p["signals"][0]["detail"]) if p["signals"] else ""
+        out.append(f'<div class="card" style="border-left:3px solid {color}">'
+                   f'<b>{html.escape(p["project"])}</b> / {html.escape(p["cadence"])} '
+                   f'— {sigs}<div class="dim" style="margin-top:.2em">{detail}</div></div>')
+    out.append('</section>')
+    reg_count = result["summary"]["regressions"] + result["summary"]["chronic"]
+    peek = (f'<span class="warn"><span class="n">{reg_count}</span> regressing</span>'
+            if reg_count else f'<span><span class="n">{len(pairs)}</span> with signals</span>')
+    return "".join(out), peek, worst == "R"
+
+
 def _queued_section(pending_decisions, reg: dict, host: str) -> str:
     """The operator-action queue: decisions waiting to apply (run a loop off-cycle, approve a
     push, apply a setting). Rendered high on the page — these are the things asking for a click."""
@@ -605,7 +643,10 @@ def _queued_section(pending_decisions, reg: dict, host: str) -> str:
         pl = dec.get("payload") or {}
         is_approval = dec["kind"] == "approve_push"
         is_dispatch = dec["kind"] == "dispatch_cadence"
-        summary = {"dispatch_cadence": f"run {pl.get('cadence', '')}",
+        # Foreman-initiated fix dispatches read differently from an operator "run now".
+        dispatch_label = (f"🔧 auto-fix {pl.get('cadence', '')} (remediation)"
+                          if pl.get("remediation") else f"run {pl.get('cadence', '')}")
+        summary = {"dispatch_cadence": dispatch_label,
                    "note": pl.get("text", ""), "apply_setting": f"set {pl.get('path', '')}",
                    "answer_question": f"answer {pl.get('question_ref', '')}",
                    "set_pin": f"pin -> {pl.get('marketplace_pin', '')}",
@@ -1003,12 +1044,18 @@ def _legend_strip() -> str:
         '<span><span class="dot red"></span> act now</span>'
         '<span><span class="dot never"></span> not yet run</span></span>')
     terms = [
+        ("Drift", "the headline signal — where a project’s real (probed) Claude Code config "
+                  "differs from what’s declared. Nothing else here checks this."),
+        ("Receipt", "the git-committed JSON verdict behind every run — the audit trail the board "
+                    "is rebuilt from."),
         ("Loop", "a recurring AI review Foreman runs for a project (docs, security, UX…)."),
         ("Verdict", "the result of each run — green, amber, or red."),
+        ("Trends", "what the receipt history shows — regressions, degrading trends, flapping and "
+                   "projections, not just the latest verdict."),
         ("Where it runs", "on this host, in the cloud, or the next session you open there."),
-        ("Queued", "an action waiting for your click — run a loop now, or approve a push."),
+        ("Queued", "an action waiting for your click — run a loop now, or approve a push "
+                   "(including an auto-remediation fix)."),
         ("Repo status", "each project’s git/GitHub health, led by a suggested next action."),
-        ("Drift", "where a project’s real Claude Code config differs from what’s declared."),
     ]
     dls = "".join(f'<dl><dt>{t}</dt><dd>{html.escape(d)}</dd></dl>' for t, d in terms)
     return ('<details class="legend-strip" id="legend" open><summary>How to read this board '
@@ -1105,16 +1152,29 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
     ro_css = "form,.acts{display:none!important}" if read_only else ""
     out.append(f'<title>Foreman</title><style>{CSS}{ro_css}</style></head>'
                f'<body data-now="{now:%Y-%m-%dT%H:%M:%SZ}">')
-    # header meta: quota (green/amber), gh identity, fleet size, clock, refresh, help
+    # header meta: notifications, quota (green/amber), gh identity, fleet size, clock, refresh, help
     qcls = "warn" if (q is not None and q < 15) else "live"
     qs = f'<span class="{qcls}">quota {int(q)}%</span> · ' if q is not None else ""
     ghs = f'gh: {html.escape(gh_login)} · ' if gh_login else '<span class="warn">gh: not authed</span> · '
     refnote = f' · refresh {refresh}s' if refresh > 0 else ''
-    tagline = ("supervisor for your Claude Code projects — it <b>schedules</b> the recurring "
-               "reviews, <b>collects a verdict</b> from every run, and surfaces <b>what needs you</b>")
+    # Notifications chip: reflect whether reds/approvals are being pushed anywhere (the board no
+    # longer has to be open to supervise). Hidden on the read-only mirror (it can't send).
+    nts = ""
+    if not read_only:
+        try:
+            from collectors import notify
+            nkind = notify.channel_config()["kind"]
+        except Exception:
+            nkind = "none"
+        nts = (f'<span class="live" title="notifications on">🔔 {nkind}</span> · '
+               if nkind != "none" else
+               '<span class="dim" title="set FOREMAN_NOTIFY_WEBHOOK to get pinged on reds">🔔 off</span> · ')
+    # The wedge, not the generic pitch: lead with what\'s *actually* in effect + the receipt trail.
+    tagline = ("knows what your Claude Code fleet is <b>actually running</b> — effective-config "
+               "<b>drift</b>, a git-committed <b>receipt</b> behind every verdict, and <b>what needs you</b>")
     out.append('<header><div class="brand"><h1>FOREMAN</h1>'
                f'<div class="tagline">{tagline}</div></div>'
-               f'<div class="meta">{ghs}{qs}<b>{len(projects)}</b> projects · '
+               f'<div class="meta">{ghs}{nts}{qs}<b>{len(projects)}</b> projects · '
                f'{now:%a %d %b %H:%M}Z{refnote} · <a href="/help">help</a></div></header>'
                f'<div class="wrap">')
     if read_only:
@@ -1126,6 +1186,18 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
                    f'<span class="dim">(see the dashboard server log for details)</span></div>')
     if low:
         out.append('<div class="banner">quota low: non-red cadences deferred to the next window</div>')
+    # DRIFT HEADLINE -- the one signal no competitor has, so it leads the page (not just the
+    # section near the bottom). When effective config has diverged from declared, say so up top.
+    drift_n = 0
+    if conn:
+        try:
+            drift_n = len(config_resolve.drift_lines(conn, reg))
+        except Exception:
+            drift_n = 0
+    if drift_n:
+        out.append(f'<div class="banner err"><b>drift: {drift_n}</b> place(s) where the '
+                   'effective Claude Code config diverges from what you declared — '
+                   '<a href="#sec-drift">review ↓</a></div>')
 
     # ORIENTATION LEGEND -- the whole board speaks in colour + a few house terms; a first-time
     # operator has no key for either. This dismissible strip decodes the green/amber/red language
@@ -1216,6 +1288,19 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
     for (proj, cad), a in todo:
         out.append(_card(proj, cad, a))
     out.append('</section>')
+
+    # INSIGHTS -- what the receipt history says that a single verdict can't: regressions,
+    # degrading trends, flapping, chronic stucks, projections. Mines the committed corpus (the
+    # one asset only Foreman has). Opens automatically when something is actively regressing.
+    try:
+        _ins = _insights_result(data)
+        _ins_html, _ins_peek, _ins_open = _insights_section(_ins)
+        out.append(_ins_html)
+        secsum["insights"] = _ins_peek
+        if _ins_open:
+            open_ids.add("insights")
+    except Exception:
+        pass
 
     # Partition every enabled loop by HOW it runs: manual (needs a click) vs auto (fires on a
     # schedule). This is the operator's core question — "what must I launch, and what runs itself?"
@@ -1862,9 +1947,12 @@ def help_page() -> str:
     """A self-contained user guide, served at /help."""
     body = """
 <h1 style="font-size:18px">Foreman — user guide</h1>
-<p class="dim">Foreman supervises multiple Claude Code projects: it schedules recurring
-review <b>loops</b>, collects a <b>verdict</b> from every run, and shows one board. It
-schedules and reads — the loop prompts do the work.</p>
+<p class="dim">Foreman supervises multiple Claude Code projects. Its edge is the two things
+nobody else gives you: it probes the <b>effective</b> config on every host and reports where it
+has <b>drifted</b> from what you declared, and it commits a tamper-evident <b>receipt</b> behind
+every verdict — so the whole history is diffable and the index is just a cache. On top of that
+it schedules recurring review <b>loops</b>, collects a <b>verdict</b> from each run, and shows
+one board. It schedules and reads — the loop prompts do the work.</p>
 
 <h2>Getting started</h2>
 <ol class="dim">
@@ -1905,12 +1993,33 @@ cost — so loops aren't all on by default.</div>
 <div class="card"><b>Repo status</b> — live git/GitHub health per project (branch, dirty files,
 stale/agent branches, open PRs, failing checks, issues), rolled into a clean / attention / issue
 summary; per-project accordions carry the detail.</div>
-<div class="card"><b>Drift</b> — config resolver output: pin drift, permission shadowing,
-budget breach. <b>Queued</b> — operator decisions waiting. <b>Discovered</b> — projects seen
-in session history that aren't registered yet.</div>
+<div class="card"><b>Drift</b> — <i>the headline signal.</i> Config-resolver output: where the
+effective (probed) config diverges from what the registry/cadences declare — pin drift,
+shadowed permissions, silently-skipped skills, budget breach. When anything has diverged it also
+shows as a banner at the top of the board. No other tool in this space checks this.</div>
+<div class="card"><b>Trends &amp; insights</b> — what the receipt <i>history</i> says, not just
+the latest verdict: <b>regressions</b> (green→red), <b>degrading</b> trends, <b>flapping</b>
+(a flaky check), <b>chronic</b> stucks, and a <b>projected</b> days-to-red. Built from the
+committed receipt corpus. Also on the CLI: <code>foreman insights</code>.</div>
+<div class="card"><b>Queued</b> — operator decisions waiting (run a loop off-cycle, approve a
+push, apply a setting). A <b>🔧 auto-fix … (remediation)</b> entry is a fix loop Foreman
+dispatched for a red; its PR still waits for your <b>approve</b> before it is pushed.
+<b>Discovered</b> — projects seen in session history that aren't registered yet.</div>
 <div class="card"><b>API keys &amp; secrets</b> — declared env keys per project, which values are
 shared across projects, and whether each uses a per-scope override. Values live in the sops store
 and never traverse the dashboard — edit <b>▸ .env</b> opens the file on this host.</div>
+
+<h2>Staying in the loop</h2>
+<div class="card"><b>Notifications</b> — a new red or a queued approval can be pushed to Slack,
+Discord, a webhook, or a file, with a deep link back here. Set <code>FOREMAN_NOTIFY_WEBHOOK</code>
+(Slack/Discord auto-detected) in your env — never in a committed file — then
+<code>foreman notify test</code>. The 🔔 chip in the header shows the active channel.</div>
+<div class="card"><b>Auto-remediation</b> — off by default. Opt a project in with
+<code>auto_remediate</code> in <code>registry.yaml</code> and mark a cadence
+<code>remediation.enabled</code>; a red then dispatches a scoped fix loop (worktree, opens a PR).
+Foreman still never does the work — it dispatches a loop that does, and the PR waits for your
+<b>approve_push</b>. Capped per red streak. <code>foreman remediate plan</code> shows what it
+would do.</div>
 
 <h2>Verdicts</h2>
 <p><span class="pill green">green</span> all good ·

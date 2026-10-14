@@ -1,12 +1,22 @@
 # Foreman
 
-**The supervisor for a portfolio of software projects built and maintained by coding agents.**
-Foreman schedules recurring AI reviews across all your projects, reduces every run to a durable
-green / amber / red **verdict**, and shows the whole fleet on one board — with a git-committed
-receipt trail behind every verdict.
+**Know what your Claude Code fleet is *actually* running — and catch it drifting.** Foreman
+probes the **effective** config on every host (not what's declared), commits a tamper-evident
+**receipt** for every scheduled review, and shows the whole portfolio on one board where a
+silent config change, a regressing loop, or a red verdict can't hide.
 
-It is a control repo, a contract, and a small index — **not** a daemon and not an agent runtime.
-*Foreman schedules and reads; the cadence prompts do the work.*
+Most tools in this space *run* agents. Foreman does the opposite job nobody else does: it tells
+you **what's real** — effective-vs-declared **config drift**, a git-committed verdict trail you
+can reconstruct from scratch, and per-host activation you can trust. A supervisor you can
+*audit*, not an agent swarm.
+
+It is a control repo, a contract, and a small (rebuildable) index — **not** a daemon and not an
+agent runtime. *Foreman schedules and reads; the cadence prompts do the work.*
+
+**New:** push **notifications** (red → Slack/Discord/webhook with a deep link), receipt-history
+**insights** (regressions, degrading trends, flapping, projections — not just the latest
+verdict), and bounded **auto-remediation** (a red can dispatch a scoped fix loop whose PR waits
+on your approval). One-command install: `scripts/install.sh`.
 
 - **Positioning & who it's for:** [`docs/ONE-PAGER.md`](docs/ONE-PAGER.md)
 - **How it compares:** [`docs/COMPARISON.md`](docs/COMPARISON.md) · tool-by-tool scan in [`docs/COMPETITIVE.md`](docs/COMPETITIVE.md)
@@ -16,10 +26,17 @@ It is a control repo, a contract, and a small index — **not** a daemon and not
 
 Coding agents made it cheap to *create and maintain* far more software per person. The bottleneck
 moved from writing code to **supervising many autonomous streams of it** — is each project still
-documented, secure, prod-ready, within budget? Doing that by hand across 10–30 repos doesn't
-scale, and per-repo CI only fires on commits and only runs deterministic checks. Foreman is the
-standing supervisor for the whole portfolio: it turns open-ended review work into scheduled
-agentic **loops**, each emitting an actionable verdict, and escalates only what needs you.
+documented, secure, prod-ready, within budget, and *configured the way you think it is*? Doing
+that by hand across 10–30 repos doesn't scale, and per-repo CI only fires on commits and only
+runs deterministic checks.
+
+Foreman's wedge is the two things nobody else gives you. First, **declared ≠ effective**: it runs
+the live `claude -p` probe on every host and reports where the config actually in force has
+**drifted** from what you declared — a shadowed `permissions.deny`, a silently-skipped skill, a
+stale marketplace pin. Second, a **git-committed receipt** behind every verdict, so the whole
+history is diffable, portable, and reconstructable — the index is just a cache. On top of that
+it's a standing supervisor for the portfolio: open-ended review work becomes scheduled agentic
+**loops**, each emitting an actionable verdict, escalating only what needs you.
 
 ## How it works
 
@@ -51,18 +68,47 @@ loop is opt-in per project and one-click enable.
 ## The board
 
 A local, auto-refreshing dashboard (`python -m collectors.web`, binds `127.0.0.1:8787`) and a
-token-gated read-only mirror on Vercel. Eight sections:
+token-gated read-only mirror on Vercel. Sections:
 
 | Section | What it answers |
 | --- | --- |
 | **Since you were away** | what changed while you were gone (runs, escalations, queued actions), new-since-last-visit marked |
 | **Needs you** | red / overdue verdicts + escalations — the daily triage |
+| **Trends & insights** | what the receipt *history* says: regressions, degrading trends, flapping, chronic stucks, projected reds — not just the latest verdict |
 | **Queued** | operator actions waiting: run a loop off-cycle (▶ Run now, on-host), approve a push, apply a setting |
 | **Loops** | every project's loops in one place — verdict + trend sparkline, schedule & next fire, where it runs, run / remove / add |
 | **Loop library** | the catalog: enable for a project, edit or customize a built-in, add a new loop |
 | **Repo status** | per-project git/GitHub vital signs (sync, dirty, PRs, CI, security alerts) + a fleet roll-up |
 | **Spend & usage** | cost / tokens / sessions per project from Claude Code telemetry |
 | **Drift / Discovered / API keys** | declared-vs-effective config divergence, unregistered repos, secrets used where |
+
+And it reaches *out*, not just in: **notifications** push a red verdict or a queued approval to
+Slack / Discord / a webhook / a file with a deep link back to the board — so a supervisor you
+don't have open still supervises.
+
+## Three things beyond a status board
+
+A board tells you what's wrong when you look. These make Foreman act like a supervisor:
+
+- **Notifications — it finds you.** A new red verdict or a queued approval is pushed to Slack,
+  Discord, a generic webhook, or a local file, with a one-line summary and a deep link into the
+  board. No secret is committed — the channel comes from `FOREMAN_NOTIFY_WEBHOOK` (auto-detects
+  Slack/Discord) in your env. `foreman notify test` sends a sample; `foreman notify scan` pushes
+  what's new. Wired into every `collect`, deduped against a spool watermark so you're pinged
+  once, not every tick.
+- **Insights — it reads the whole history, not the tip.** Every verdict Foreman ever collected
+  is in git; `foreman insights` mines that corpus for what a single verdict can't show —
+  **regressions** (green→red), **degrading** trends, **flapping** (a flaky check, not a real
+  problem), **chronic** stucks, and a **projected** days-to-red. It surfaces as the *Trends &
+  insights* board section and in the notification headline. Nobody can copy this without first
+  building the receipt contract — the insight is a property of the corpus, and the corpus is the
+  moat.
+- **Auto-remediation — it can fix, with your approval.** Opt a project into `auto_remediate` and
+  mark a cadence `remediation.enabled`, and a red will **dispatch a scoped fix loop** (worktree-
+  isolated, opens a PR). The invariant holds — *Foreman never does the work*; it dispatches a
+  loop that does, and the PR waits on the existing `approve_push` human gate before anything is
+  pushed. Capped at `max_attempts` per red streak, then it stops and files a note. Off by
+  default; `foreman remediate plan` shows exactly what it would do.
 
 ## Non-negotiable invariants
 
@@ -76,20 +122,38 @@ token-gated read-only mirror on Vercel. Eight sections:
    labeled predictions. This drives the **Drift** section.
 6. **Foreman never does the work** — it schedules and reads; the cadence prompts do the work.
 
-## Quickstart
+## Install
+
+One command puts the `foreman` CLI on PATH, scaffolds an instance (`registry.yaml`, the `state`
+worktree, `spool/`, the index cache), and runs a preflight:
+
+```bash
+scripts/install.sh                    # or: FOREMAN_DIR=~/work/foreman scripts/install.sh
+foreman doctor                         # preflight — shows exactly what's still to wire, with fixes
+```
+
+`foreman doctor` checks Python, git, `gh` auth, the `claude` binary (for the drift probe), the
+state worktree, your notification channel, and the scheduler — printing a copy-pasteable fix for
+anything not ready, and failing only on a hard problem (so it's safe in a setup script).
+
+## Quickstart (manual)
 
 ```bash
 python -m collectors.validate                 # registry + every cadence (the pre-commit gate)
 sqlite3 :memory: < sql/schema.sql              # DDL parses
 python -m pytest tests/                         # full suite (unit + end-to-end)
 
-git worktree add state state                   # the state branch, as a worktree
-export FOREMAN_STATE_DIR="$PWD/state"
+foreman init ~/foreman                         # scaffold the instance (registry + state + cache)
+git worktree add ~/foreman/state state         # the state branch, as a worktree
+export FOREMAN_DIR=~/foreman FOREMAN_STATE_DIR=~/foreman/state
 
-python -m collectors.discover scan ~ --owner <you> --apply   # register local repos by git origin
-python -m collectors.loops enable <project> <loop>           # opt a project into a loop
-python -m collectors.collect --state-dir ./state --index ./index.db --host mbp   # snapshot git+GitHub
-python -m collectors.web --port 8787           # open http://localhost:8787
+foreman discover scan ~ --owner <you> --apply  # register local repos by git origin
+foreman loops enable <project> <loop>          # opt a project into a loop
+foreman collect --host mbp                      # snapshot git+GitHub into the index
+foreman web --port 8787                         # open http://localhost:8787
+
+export FOREMAN_NOTIFY_WEBHOOK=https://hooks.slack.com/services/...   # optional: ping me on reds
+foreman notify test
 ```
 
 > **Works with private repos.** The GitHub collector shells out to the [`gh`](https://cli.github.com)
@@ -138,6 +202,10 @@ collectors/
   collect.py             run all collectors into the index (C1–C7)
   web.py                 the dashboard (stdlib http.server) + every mutating action
   decisions.py           operator decision queue: enqueue / drain / board / gc
+  notify.py              outbound push (Slack/Discord/webhook/file) for reds + queued approvals
+  insights.py            receipt-history intelligence: regressions, trends, flapping, projections
+  remediate.py           bounded auto-remediation: red → dispatch a fix loop (approval-gated)
+  doctor.py              preflight: python / git / gh / claude / state / notify / scheduler
   secrets.py             sops/age store, per-scope override, .env injection, key fingerprints
 hooks/                   session_start (drain), session_end / stop (receipt emission)
 sql/schema.sql           index DDL
@@ -146,10 +214,12 @@ state/                   the state branch (worktree): receipts/ and queue/ only,
 
 ## Status
 
-**M1–M8 shipped** plus the §19 secrets store, and a full operator surface on top (dashboard,
+**M1–M8 shipped** plus the §19 secrets store and a full operator surface on top (dashboard,
 launchd scheduler with per-project autorun / frequency presets / time-of-day window / per-loop
 run-location override, loop catalog + library, assisted registration, telemetry-driven spend,
-verdict trends, activity feed). **231 tests, ~84 % line coverage** (`python -m pytest tests/`).
+verdict trends, activity feed), and now the three supervisor capabilities above —
+**notifications**, receipt-history **insights**, and bounded **auto-remediation** — plus a
+one-command installer and `foreman doctor` preflight. **350+ tests** (`python -m pytest tests/`).
 
 The remaining work is host-bound operations, not code: stand up the OTLP telemetry receiver on
 the always-on host, wire the cloud routine, provision `sops`/`age`, and set `FOREMAN_QUOTA_CMD`

@@ -30,15 +30,20 @@ The "AI-agent ops / scheduled-review-fleet" category exploded in 2026, so this w
 
 ## Where Foreman is behind
 
-- **Maturity/packaging.** 5dive/AgentsRoom ship one-command spin-up and communities; Foreman is
-  a personal control repo — no installer, no ecosystem.
+- **Maturity/packaging.** 5dive/AgentsRoom ship one-command spin-up and communities. *Addressed
+  in part:* `scripts/install.sh` + `foreman init` + `foreman doctor` now give a one-command
+  install and a preflight; the ecosystem/community is still nascent.
 - **Execution engine.** Bernstein/agent-fleet-o do worktree parallelism, DAG workflows, and
-  human-in-the-loop approvals; Foreman "never does the work," so its launch mode is basic and
-  it leans on external sessions/scheduler.
+  human-in-the-loop approvals; Foreman "never does the work." *Narrowed:* bounded
+  auto-remediation now dispatches a worktree-isolated fix loop whose PR is approval-gated —
+  without Foreman itself doing the work. Still no DAG/parallel engine by design.
 - **Cost/execution control.** MartinLoop's budgets, iteration caps, stop conditions, and
-  verifier passes are more mature than Foreman's single quota guard.
+  verifier passes. Foreman now has per-run `budget` stop conditions and an independent `verify`
+  pass in the cadence schema alongside the global quota guard.
 - **UI polish & scale.** 5dive ships a real triage dashboard; Cloudflare's system did ~131k
   review runs/month. Foreman's dashboard is a functional stdlib server, single-operator.
+- **Reach.** *Addressed:* notifications (Slack/Discord/webhook) now push reds + approvals, so the
+  board no longer has to be open to supervise.
 
 ## Verdict
 
@@ -46,8 +51,11 @@ A credible, unusually principled entrant in a now-crowded field. Foreman won't w
 most agents fastest" (fleet/DAG tools own that) or polish (5dive/MartinLoop). Its defensible
 angle is **correctness & auditability**: the git-native receipt contract, the effective-config
 drift probe, and multi-tier per-host activation — "a supervisor you can trust and reconstruct,"
-not "an agent swarm." Sharpen the wedge by leaning into config-drift/effective-activation (nobody
-else has it) while adopting the strongest table-stakes ideas from the field (see BUILD.md M8).
+not "an agent swarm." The lead is now wider on the one thing no competitor has: **receipt-history
+insights** (regressions/trends/projections) are a property of the committed corpus, so they can't
+be replicated without first building the receipt contract. With notifications, a one-command
+install, and approval-gated remediation, the earlier packaging/reach gaps are largely closed —
+leaving the moat (drift + the receipt corpus) as the thing to keep sharpening (see BUILD.md M8).
 
 ## Sources
 

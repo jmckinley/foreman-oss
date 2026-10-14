@@ -36,7 +36,8 @@
           "type": "boolean",
           "description": "Default scheduler behaviour: true = fire runs automatically (launch), false = queue for the next session (dispatch). Overridable per project."
         },
-        "autorun_window": { "$ref": "#/$defs/autorunWindow" }
+        "autorun_window": { "$ref": "#/$defs/autorunWindow" },
+        "auto_remediate": { "$ref": "#/$defs/autoRemediate" }
       }
     },
     "projects": {
@@ -84,6 +85,7 @@
             "description": "Per-project scheduler behaviour: true = fire automatically, false = queue. Overrides defaults.autorun."
           },
           "autorun_window": { "$ref": "#/$defs/autorunWindow" },
+          "auto_remediate": { "$ref": "#/$defs/autoRemediate" },
           "env_keys": {
             "type": "array",
             "items": { "type": "string" },
@@ -103,6 +105,13 @@
     }
   },
   "$defs": {
+    "autoRemediate": {
+      "description": "Opt a project into bounded auto-remediation. true = let every remediation-capable cadence in this project dispatch a fix loop on red; an array restricts it to the named loops. Absent/false = off (the safe default). A project value overrides defaults. Remediation PRs still wait for the approve_push human gate.",
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      ]
+    },
     "autorunWindow": {
       "type": "object",
       "additionalProperties": false,

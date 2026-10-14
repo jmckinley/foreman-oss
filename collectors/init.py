@@ -140,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             print("  next: register a project — foreman discover register <path> "
                   "(or re-run init with --register)")
         print(f"  next: foreman validate && foreman collect --host {args.host}")
+        print("  next: foreman doctor      # preflight — shows anything still to wire")
+        print("  tip:  set FOREMAN_NOTIFY_WEBHOOK to get pinged on reds (foreman notify test)")
     return 0
 
 

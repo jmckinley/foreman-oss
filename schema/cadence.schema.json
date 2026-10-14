@@ -75,6 +75,18 @@
         "open_pr": { "type": "boolean" },
         "max_files_changed": { "type": "integer", "minimum": 1 }
       }
+    },
+    "remediation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "When a run of this loop is red, Foreman may dispatch a scoped FIX loop (worktree-isolated, writes.open_pr) whose PR waits for the approve_push human gate before it is pushed. Opt-in per project via registry auto_remediate — never on by default. Foreman still never does the work itself: it dispatches a loop that does, and a human approves the merge.",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "fix_prompt_ref": { "type": "string", "description": "Prompt the fix loop runs (defaults to <slug>-fix)." },
+        "fix_cadence": { "type": "string", "description": "Cadence slug to dispatch for the fix (defaults to <slug>-fix)." },
+        "max_attempts": { "type": "integer", "minimum": 1, "description": "Cap on consecutive un-cleared fix attempts before Foreman stops and escalates (default 2)." }
+      }
     }
   }
 }

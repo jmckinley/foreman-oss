@@ -102,11 +102,30 @@ def run_all(*, index_path, state_dir, foreman_dir, host, now=None, gh=github_sta
     rs = runstate.collect(conn, quota_fetch=quota_fetch, routine_history=routine_history, now=now)
 
     conn.commit()
+
+    # Bounded auto-remediation: enqueue a scoped fix dispatch for any opted-in loop that is red
+    # (registry auto_remediate + cadence remediation.enabled gate it; off by default). Non-fatal.
+    try:
+        from collectors import remediate
+        rem = remediate.scan(state_dir, foreman_dir, now=now)
+    except Exception:
+        rem = {"dispatched": [], "capped": [], "skipped": []}
+
+    # Push notifications for fresh reds / queued approvals. Opt-in and non-fatal: no channel
+    # configured -> a no-op; a transport hiccup must never fail the collect. (Feature: notify.)
+    try:
+        from collectors import notify
+        if spool_dir and notify.channel_config()["kind"] != "none":
+            notify.scan_and_notify(state_dir, foreman_dir, spool_dir, now=now)
+    except Exception:
+        pass
+
     result = {"runs": ing["runs"], "git_state": git_rows, "github_state": gh_rows,
               "config_snapshots": cfg_rows, "sessions": c1["scanned"],
               "oversized": c1["oversized"], "telemetry_days": c2["days"],
               "escalations_open": esc["open"], "quota": rs["quota"] is not None,
-              "runs_recorded": rs["runs_recorded"], "taken": taken}
+              "runs_recorded": rs["runs_recorded"], "taken": taken,
+              "remediations": len(rem["dispatched"])}
     if c1_red:
         result["c1_red"] = c1_red
     return result
