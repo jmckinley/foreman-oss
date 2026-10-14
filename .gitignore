@@ -17,3 +17,12 @@ secrets/*
 .coverage
 .DS_Store
 
+
+# Screencast build intermediates — only the storyboard, final .mp4 and caption sidecars are
+# tracked (see screencast/README.md). Audio is cached per segment id; frames/clips are per build.
+screencast/audio/
+screencast/frames/
+screencast/clips/
+screencast/*.webm
+scripts/screencast/node_modules/
+scripts/screencast/package-lock.json

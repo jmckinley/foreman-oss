@@ -1572,7 +1572,12 @@ def render(data, refresh: int = 30, gh_login: str | None = None, fingerprints: b
     # down in the observe/plumbing zone -- registering a project is a setup action, like enabling
     # a loop.
     try:
-        disc = discover.discover_from_roots(reg)
+        # Honour FOREMAN_TRANSCRIPTS_ROOT (same override recent.py uses) so discovery and the
+        # recent roster read the same session root — and so a demo/isolated instance can point
+        # both at a synthetic dir instead of scanning the operator's real ~/.claude/projects.
+        _troot = os.environ.get("FOREMAN_TRANSCRIPTS_ROOT")
+        disc = discover.discover_from_roots(
+            reg, [(_troot, "cli")] if _troot else discover.DEFAULT_ROOTS)
     except Exception:
         disc = []
     secsum["discovered"] = (f'<span><span class="n">{len(disc)}</span> to register</span>' if disc
