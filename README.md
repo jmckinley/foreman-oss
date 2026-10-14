@@ -172,20 +172,23 @@ python -m collectors.decisions gc               # expire past-due, prune old app
 
 ## Demo
 
-The repo ships with a **synthetic demo instance** — a fictional fleet (`registry.yaml` +
-`index.db`, all made-up data) — so you can explore the whole board without wiring anything up:
+A **self-contained synthetic demo** — a fictional fleet (receipts, index, and decision queue,
+all made-up data) — lets you explore the whole board, differentiators included, with nothing
+wired up:
 
 ```bash
-python -m collectors.web --port 8787            # open http://localhost:8787
+python scripts/make_demo.py                          # writes examples/demo/
+FOREMAN_DIR=examples/demo python -m collectors.web   # open http://localhost:8787
 ```
 
-You get the full board: green/amber/red verdicts with trend sparklines, the per-repo
-**Suggested next** synthesis, spend & usage, config drift, and the loop library.
+You get the full board with everything on show: the **drift banner** firing (a pin mismatch, a
+shadowed permission, a skill the probe says would silently no-op), the **Trends & insights**
+panel (regressions, chronic reds, flapping, a projected red), green/amber/red verdicts with
+sparklines, spend & usage, and a staged **red → auto-fix → approve** flow in Queued.
 
-> The Quickstart's `discover` / `collect` steps replace the demo with **your** projects.
-> The committed demo snapshot has fixed timestamps and drifts toward "overdue" over time —
-> regenerate a fresh one with `python scripts/make_demo.py` (writes `examples/demo/`), then
-> `FOREMAN_DIR=examples/demo python -m collectors.web`.
+> If you cloned the public mirror, the repo root is already a pre-built demo — just
+> `python -m collectors.web`. The Quickstart's `discover` / `collect` steps replace the demo
+> with **your** projects. Demo timestamps are generation-relative, so regenerate to refresh.
 
 ## Layout
 

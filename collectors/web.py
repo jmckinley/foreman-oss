@@ -643,10 +643,8 @@ def _queued_section(pending_decisions, reg: dict, host: str) -> str:
         pl = dec.get("payload") or {}
         is_approval = dec["kind"] == "approve_push"
         is_dispatch = dec["kind"] == "dispatch_cadence"
-        # Foreman-initiated fix dispatches read differently from an operator "run now".
-        dispatch_label = (f"🔧 auto-fix {pl.get('cadence', '')} (remediation)"
-                          if pl.get("remediation") else f"run {pl.get('cadence', '')}")
-        summary = {"dispatch_cadence": dispatch_label,
+        is_remediation = bool(pl.get("remediation"))
+        summary = {"dispatch_cadence": f"run {pl.get('cadence', '')}",
                    "note": pl.get("text", ""), "apply_setting": f"set {pl.get('path', '')}",
                    "answer_question": f"answer {pl.get('question_ref', '')}",
                    "set_pin": f"pin -> {pl.get('marketplace_pin', '')}",
@@ -682,12 +680,22 @@ def _queued_section(pending_decisions, reg: dict, host: str) -> str:
         if is_dispatch:
             # a dispatch's default fate is a status shown as a caption under the item (not an
             # inline chip beside the buttons): it fires when the project is next opened. "Run now"
-            # above is the override.
-            head = (f'<b>{proj}</b> <span class="dim">·</span> run '
-                    f'<b>{html.escape(pl.get("cadence", ""))}</b>')
-            sub = ('<div class="dim" title="Foreman delivers this to the next Claude Code session '
-                   'opened in this project — nothing is spawned until then">Otherwise runs the next '
-                   f'time you open {proj} in Claude Code.</div>')
+            # above is the override. A remediation dispatch reads as a Foreman-initiated fix.
+            if is_remediation:
+                parent = html.escape(pl.get("parent", ""))
+                head = (f'<b>{proj}</b> <span class="dim">·</span> 🔧 auto-fix '
+                        f'<b>{html.escape(pl.get("cadence", ""))}</b> '
+                        f'<span class="dim">— remediation for a red {parent}</span>')
+                sub = ('<div class="dim" title="Foreman dispatched a scoped fix loop because a '
+                       'loop went red; the fix runs in a worktree and its PR waits for your '
+                       'approval before anything is pushed">dispatched by auto-remediation · the '
+                       'fix loop opens a PR that waits for your approval (below).</div>')
+            else:
+                head = (f'<b>{proj}</b> <span class="dim">·</span> run '
+                        f'<b>{html.escape(pl.get("cadence", ""))}</b>')
+                sub = ('<div class="dim" title="Foreman delivers this to the next Claude Code session '
+                       'opened in this project — nothing is spawned until then">Otherwise runs the next '
+                       f'time you open {proj} in Claude Code.</div>')
         else:
             waits = ("pushes the branch and opens a PR when you approve" if is_approval else
                      "edits this project's files now — no window needed"
@@ -2297,8 +2305,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--secret-fingerprints", action=argparse.BooleanOptionalAction, default=True,
                     help="show the last-5 chars of each key's .env value (a fingerprint)")
     args = ap.parse_args(argv)
+    # State dir defaults to <foreman-dir>/state when not given, so a self-contained instance
+    # (incl. the demo: `FOREMAN_DIR=examples/demo foreman web`) just works. load_receipts /
+    # load_pending both degrade gracefully if that dir has no receipts/queue yet.
+    state_dir = args.state_dir or str(Path(args.foreman_dir) / "state")
+    # Index defaults to <foreman-dir>/index.db when present (the demo ships one), else the
+    # standard cache path; a missing index just omits the index-backed sections.
+    index_path = args.index
+    if not index_path:
+        local_idx = Path(args.foreman_dir) / "index.db"
+        index_path = str(local_idx) if local_idx.exists() else None
     login = gh_account()
-    handler = make_handler(Path(args.foreman_dir), Path(args.state_dir), args.index,
+    handler = make_handler(Path(args.foreman_dir), Path(state_dir), index_path,
                            args.refresh, login, args.secret_fingerprints)
     print(f"Foreman dashboard on http://localhost:{args.port}  (gh: {login or 'not authed'})")
     ThreadingHTTPServer(("127.0.0.1", args.port), handler).serve_forever()

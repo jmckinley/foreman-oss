@@ -1,0 +1,17 @@
+{
+  "actor": "foreman-remediate",
+  "created": "2026-10-14T02:43:42Z",
+  "decision_id": "01M4W4PMPQN2RMJWA2M7EEXKFN",
+  "kind": "approve_push",
+  "payload": {
+    "ahead": 3,
+    "base": "main",
+    "branch": "foreman/docs-sync-fix",
+    "cadence": "docs-sync",
+    "title": "Foreman: docs-sync fix"
+  },
+  "project": "paysvc",
+  "requires_session": false,
+  "schema_version": 1,
+  "status": "pending"
+}
