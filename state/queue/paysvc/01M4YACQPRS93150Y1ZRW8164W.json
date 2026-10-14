@@ -1,0 +1,17 @@
+{
+  "actor": "foreman-remediate",
+  "created": "2026-10-14T23:01:38Z",
+  "decision_id": "01M4YACQPRS93150Y1ZRW8164W",
+  "kind": "dispatch_cadence",
+  "payload": {
+    "attempt": 1,
+    "cadence": "docs-sync-fix",
+    "parent": "docs-sync",
+    "remediation": true,
+    "source_run": "DEMO-docs-sync"
+  },
+  "project": "paysvc",
+  "requires_session": true,
+  "schema_version": 1,
+  "status": "pending"
+}

@@ -10,3 +10,7 @@ hooks/
 __pycache__/
 *.pyc
 foreman-test/
+
+# the product-demo video + build rig are not part of the hosted board
+screencast/
+*.mp4
