@@ -1,0 +1,24 @@
+{
+  "cadence": "security-review",
+  "cc_version": "unknown",
+  "ended": "2026-10-15T07:32:11Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "security-review run failed on workloados"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why security-review produced no verdict on workloados.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "workloados",
+  "run_id": "01M4Z7KJ8S2F0J61NF4K53KMRB",
+  "schema_version": 1,
+  "started": "2026-10-15T07:32:10Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
