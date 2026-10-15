@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-15T03:30:48Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on helpersvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on helpersvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "helpersvc",
+  "run_id": "01M4YSSJFEAZ53TXSA2A10XDX5",
+  "schema_version": 1,
+  "started": "2026-10-15T03:30:45Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
