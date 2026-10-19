@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-19T03:33:41Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on acmeweb"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on acmeweb.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "acmeweb",
+  "run_id": "01M593HQB0KSMM2RTP5MTEXEHG",
+  "schema_version": 1,
+  "started": "2026-10-19T03:33:36Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
