@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-10-20T05:27:59Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on classbot"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on classbot.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "classbot",
+  "run_id": "01M5BWFRBVZBE9ZNG6K6W3BB6J",
+  "schema_version": 1,
+  "started": "2026-10-20T05:27:56Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
