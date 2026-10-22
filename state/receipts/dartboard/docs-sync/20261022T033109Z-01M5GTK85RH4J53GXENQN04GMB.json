@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-22T03:31:09Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on dartboard"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on dartboard.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "dartboard",
+  "run_id": "01M5GTK85RH4J53GXENQN04GMB",
+  "schema_version": 1,
+  "started": "2026-10-22T03:31:07Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

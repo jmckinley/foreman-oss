@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-22T03:31:11Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on filingsvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on filingsvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "filingsvc",
+  "run_id": "01M5GTK9XJRF0WJTM262K5TGJ2",
+  "schema_version": 1,
+  "started": "2026-10-22T03:31:07Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
