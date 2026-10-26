@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-26T03:36:03Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on classbot"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on classbot.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "classbot",
+  "run_id": "01M5V4F3VD1YCM3DSXDCVTP6SE",
+  "schema_version": 1,
+  "started": "2026-10-26T03:36:01Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
