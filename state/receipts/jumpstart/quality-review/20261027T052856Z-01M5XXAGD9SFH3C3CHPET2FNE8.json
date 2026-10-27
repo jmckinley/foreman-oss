@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-10-27T05:28:56Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on jumpstart"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on jumpstart.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "jumpstart",
+  "run_id": "01M5XXAGD9SFH3C3CHPET2FNE8",
+  "schema_version": 1,
+  "started": "2026-10-27T05:28:54Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

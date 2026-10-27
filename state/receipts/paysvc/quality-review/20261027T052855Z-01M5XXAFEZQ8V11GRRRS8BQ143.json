@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-10-27T05:28:55Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on paysvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on paysvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "paysvc",
+  "run_id": "01M5XXAFEZQ8V11GRRRS8BQ143",
+  "schema_version": 1,
+  "started": "2026-10-27T05:28:54Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
