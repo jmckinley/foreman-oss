@@ -1,0 +1,24 @@
+{
+  "cadence": "security-review",
+  "cc_version": "unknown",
+  "ended": "2026-10-29T08:26:29Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "security-review run failed on paysite"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why security-review produced no verdict on paysite.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "paysite",
+  "run_id": "01M63C91PPY34RY8FT6ZQ5WPA0",
+  "schema_version": 1,
+  "started": "2026-10-29T08:26:25Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
