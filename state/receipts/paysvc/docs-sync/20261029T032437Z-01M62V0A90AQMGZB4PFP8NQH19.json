@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-29T03:24:37Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on paysvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on paysvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "paysvc",
+  "run_id": "01M62V0A90AQMGZB4PFP8NQH19",
+  "schema_version": 1,
+  "started": "2026-10-29T03:24:36Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

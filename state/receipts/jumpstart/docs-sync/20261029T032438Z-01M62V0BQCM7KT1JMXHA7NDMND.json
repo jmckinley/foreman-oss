@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-10-29T03:24:38Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on jumpstart"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on jumpstart.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "jumpstart",
+  "run_id": "01M62V0BQCM7KT1JMXHA7NDMND",
+  "schema_version": 1,
+  "started": "2026-10-29T03:24:36Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
