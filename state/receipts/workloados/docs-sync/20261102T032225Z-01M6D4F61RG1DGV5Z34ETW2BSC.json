@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-11-02T03:22:25Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on workloados"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on workloados.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "workloados",
+  "run_id": "01M6D4F61RG1DGV5Z34ETW2BSC",
+  "schema_version": 1,
+  "started": "2026-11-02T03:22:25Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
