@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-03T06:27:23Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on devcompanion"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on devcompanion.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "devcompanion",
+  "run_id": "01M6G1EK0XVWB324XQJ3PS7GW0",
+  "schema_version": 1,
+  "started": "2026-11-03T06:27:22Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

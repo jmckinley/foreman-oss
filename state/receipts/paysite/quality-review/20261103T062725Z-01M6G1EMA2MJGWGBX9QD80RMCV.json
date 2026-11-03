@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-03T06:27:25Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on paysite"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on paysite.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "paysite",
+  "run_id": "01M6G1EMA2MJGWGBX9QD80RMCV",
+  "schema_version": 1,
+  "started": "2026-11-03T06:27:22Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
