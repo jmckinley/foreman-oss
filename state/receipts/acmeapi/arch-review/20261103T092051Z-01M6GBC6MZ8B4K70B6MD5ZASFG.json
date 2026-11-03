@@ -1,0 +1,24 @@
+{
+  "cadence": "arch-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-03T09:20:51Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "arch-review run failed on acmeapi"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why arch-review produced no verdict on acmeapi.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "acmeapi",
+  "run_id": "01M6GBC6MZ8B4K70B6MD5ZASFG",
+  "schema_version": 1,
+  "started": "2026-11-03T09:20:51Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
