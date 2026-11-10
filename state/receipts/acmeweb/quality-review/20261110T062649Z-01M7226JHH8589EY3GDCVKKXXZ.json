@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-10T06:26:49Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on acmeweb"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on acmeweb.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "acmeweb",
+  "run_id": "01M7226JHH8589EY3GDCVKKXXZ",
+  "schema_version": 1,
+  "started": "2026-11-10T06:26:47Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

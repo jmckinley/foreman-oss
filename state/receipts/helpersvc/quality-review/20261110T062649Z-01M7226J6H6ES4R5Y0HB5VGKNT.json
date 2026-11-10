@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-10T06:26:49Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on helpersvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on helpersvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "helpersvc",
+  "run_id": "01M7226J6H6ES4R5Y0HB5VGKNT",
+  "schema_version": 1,
+  "started": "2026-11-10T06:26:47Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
