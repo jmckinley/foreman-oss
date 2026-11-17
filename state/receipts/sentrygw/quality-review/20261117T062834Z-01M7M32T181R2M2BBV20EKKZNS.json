@@ -1,0 +1,24 @@
+{
+  "cadence": "quality-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-17T06:28:34Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "quality-review run failed on sentrygw"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why quality-review produced no verdict on sentrygw.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "sentrygw",
+  "run_id": "01M7M32T181R2M2BBV20EKKZNS",
+  "schema_version": 1,
+  "started": "2026-11-17T06:28:34Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
