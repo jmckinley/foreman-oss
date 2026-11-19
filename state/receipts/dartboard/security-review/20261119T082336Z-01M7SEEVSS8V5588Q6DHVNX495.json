@@ -1,0 +1,24 @@
+{
+  "cadence": "security-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-19T08:23:36Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "security-review run failed on dartboard"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why security-review produced no verdict on dartboard.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "dartboard",
+  "run_id": "01M7SEEVSS8V5588Q6DHVNX495",
+  "schema_version": 1,
+  "started": "2026-11-19T08:23:35Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}

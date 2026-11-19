@@ -1,0 +1,24 @@
+{
+  "cadence": "security-review",
+  "cc_version": "unknown",
+  "ended": "2026-11-19T08:23:35Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "security-review run failed on devresources"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why security-review produced no verdict on devresources.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "devresources",
+  "run_id": "01M7SEEVD7ZS6NQJM2ZM0B965P",
+  "schema_version": 1,
+  "started": "2026-11-19T08:23:35Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
