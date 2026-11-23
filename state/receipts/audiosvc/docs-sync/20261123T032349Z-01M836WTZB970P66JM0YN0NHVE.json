@@ -1,0 +1,24 @@
+{
+  "cadence": "docs-sync",
+  "cc_version": "unknown",
+  "ended": "2026-11-23T03:23:49Z",
+  "escalations": [
+    {
+      "evidence": "run ended without a partial; no metrics were reported",
+      "severity": "red",
+      "summary": "docs-sync run failed on audiosvc"
+    }
+  ],
+  "host": "cloud",
+  "lock": "unverified",
+  "metrics": {},
+  "next_action": "Investigate why docs-sync produced no verdict on audiosvc.",
+  "notes": "run ended without a partial; no metrics were reported",
+  "project": "audiosvc",
+  "run_id": "01M836WTZB970P66JM0YN0NHVE",
+  "schema_version": 1,
+  "started": "2026-11-23T03:23:46Z",
+  "status": "failed",
+  "tier": "cloud",
+  "verdict": "red"
+}
